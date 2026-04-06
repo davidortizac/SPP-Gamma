@@ -23,6 +23,8 @@ Aplicación multimarca para explorar portafolio por fabricante y generar anális
 
 ## Ejecutar con Docker Compose
 
+> 💡 **¿Eres nuevo en esto?** Revisa el [Manual de Usuario completo (MANUAL.md)](MANUAL.md) para ver la "Configuración rápida para usuarios Cero Experto" paso a paso.
+
 1. Copia el archivo de ejemplo:
 
 ```bash

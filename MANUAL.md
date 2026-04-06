@@ -11,6 +11,7 @@
 2. [Arquitectura de la aplicación](#2-arquitectura-de-la-aplicación)
 3. [Requisitos](#3-requisitos)
 4. [Instalación y configuración](#4-instalación-y-configuración)
+   - [Configuración rápida (Usuarios Cero Experto)](#40-configuración-rápida-para-usuarios-sin-experiencia-cero-experto)
    - [Con Docker Compose (recomendado)](#41-con-docker-compose-recomendado)
    - [Sin Docker (Node.js directo)](#42-sin-docker-nodejs-directo)
 5. [Configuración de la API Key de Gemini](#5-configuración-de-la-api-key-de-gemini)
@@ -86,6 +87,39 @@ El backend actúa como **proxy seguro**: la API Key de Gemini nunca se expone al
 
 ## 4. Instalación y configuración
 
+### 4.0 Configuración rápida para usuarios sin experiencia (Cero Experto)
+
+Si es tu primera vez usando este tipo de aplicaciones, sigue estos pasos desde cero:
+
+#### Paso 1: Instalar las herramientas necesarias
+1. **Instalar Git:**
+   - Descarga e instala Git desde [git-scm.com](https://git-scm.com/downloads).
+   - Durante la instalación, puedes dejar todas las opciones por defecto haciendo clic en "Siguiente" hasta finalizar.
+2. **Instalar Docker:**
+   - Descarga e instala Docker Desktop desde [docker.com](https://www.docker.com/products/docker-desktop/).
+   - Ábrelo una vez finalizada la instalación. Es posible que te pida reiniciar la computadora. **Asegúrate de que Docker Desktop esté abierto y ejecutándose** en segundo plano antes de continuar (verás el ícono de la ballena en tu barra de tareas).
+
+#### Paso 2: Ejecutar los comandos
+Abre la **Terminal** (Busca "Símbolo del sistema" o "PowerShell" en tu menú de inicio de Windows, o "Terminal" en macOS) y copia y pega, uno por uno, los siguientes comandos y presiona la tecla **Enter** después de cada uno:
+
+```bash
+# 1. Descarga el código a tu computadora
+git clone https://github.com/davidortizac/SPP-Gamma.git
+
+# 2. Entra a la carpeta que se acaba de crear
+cd SPP-Gamma
+
+# 3. Inicia la aplicación usando Docker
+docker compose up --build
+```
+
+#### Paso 3: Abrir la aplicación
+¡Listo! Abre tu navegador web favorito (Chrome, Edge, Safari) e ingresa a: **`http://localhost:3000`**
+
+*(Puedes pegar la clave de Gemini que obtuviste directamente en la interfaz gráfica).*
+
+---
+
 ### 4.1 Con Docker Compose (recomendado)
 
 ```bash
@@ -97,7 +131,7 @@ cd SPP-Gamma
 cp .env.example .env
 
 # 3. Edita .env y pega tu API key de Gemini
-#    GEMINI_API_KEY=AIza...
+#    GEMINI_API_KEY=xxxx
 
 # 4. Levanta el contenedor
 docker compose up --build
@@ -122,7 +156,7 @@ cd SPP-Gamma
 npm install
 
 # 3. Define la variable de entorno (PowerShell)
-$env:GEMINI_API_KEY = "AIza..."
+$env:GEMINI_API_KEY = "xxxx"
 
 # 4. Inicia el servidor
 npm start
@@ -140,7 +174,7 @@ Tienes **dos formas** de proporcionar la API Key:
 ### Opción A — En el servidor (`.env`)
 Edita el archivo `.env`:
 ```env
-GEMINI_API_KEY=AIzaSy...
+GEMINI_API_KEY=xxxx
 GEMINI_MODEL=gemini-2.5-flash
 ```
 ✅ Recomendada para producción. La key **nunca se expone al cliente**.
@@ -275,7 +309,7 @@ El backend expone los siguientes endpoints:
   "solution": "NGFW",
   "country": "Colombia",
   "notes": "Empresa del sector financiero regulada por SFC",
-  "apiKey": "AIza..." 
+  "apiKey": "xxxx" 
 }
 ```
 > El campo `apiKey` es opcional si `GEMINI_API_KEY` está definido en el servidor.
