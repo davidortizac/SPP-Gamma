@@ -1,0 +1,193 @@
+{
+  "manufacturers": [
+    {
+      "name": "Fortinet",
+      "description": "Seguridad de red, SASE, ZTNA, SOC y protección de infraestructura.",
+      "solutions": [
+        {
+          "name": "NGFW",
+          "products": [
+            "FortiGate",
+            "FortiManager",
+            "FortiAnalyzer"
+          ],
+          "value": [
+            "Segmentación",
+            "Inspección avanzada",
+            "Visibilidad centralizada"
+          ]
+        },
+        {
+          "name": "SASE",
+          "products": [
+            "FortiSASE",
+            "FortiClient",
+            "FortiAuthenticator"
+          ],
+          "value": [
+            "Acceso seguro",
+            "Políticas unificadas",
+            "Experiencia remota"
+          ]
+        },
+        {
+          "name": "SOC / SIEM",
+          "products": [
+            "FortiSIEM",
+            "FortiSOAR",
+            "FortiAnalyzer"
+          ],
+          "value": [
+            "Correlación",
+            "Automatización",
+            "Respuesta"
+          ]
+        },
+        {
+          "name": "Endpoint",
+          "products": [
+            "FortiEPP",
+            "FortiEDR",
+            "FortiXDR"
+          ],
+          "value": [
+            "Aseguramiento del endpoint",
+            "Seguridad ante ataques de ramsonware",
+            "Deteccion y respuesta de ataques en el endpoint"
+          ]
+        },
+        {
+          "name": "WAAP",
+          "products": [
+            "FortiWEB"
+          ],
+          "value": [
+            "Seguridad de aplicaciones web",
+            "Seguridad de API",
+            "Seguridad de ataques con BOT",
+            "Aseguramiento de aplicaciones que usan IA"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Kriptos",
+      "description": "Clasificación de datos, DLP y protección de información no estructurada con IA.",
+      "solutions": [
+        {
+          "name": "Clasificación de Datos",
+          "products": [
+            "Kriptos AI Classifier",
+            "Kriptos Dashboard"
+          ],
+          "value": [
+            "Visibilidad de datos",
+            "Etiquetado automático",
+            "Reducción de riesgo oculto"
+          ]
+        },
+        {
+          "name": "DLP",
+          "products": [
+            "Kriptos DLP Engine",
+            "Kriptos Policy Manager"
+          ],
+          "value": [
+            "Prevención de fuga",
+            "Cumplimiento normativo",
+            "Control de datos críticos"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Crowdstrike",
+      "description": "Seguridad clientes y endpoint, EDR, IADR, ITDR",
+      "solutions": [
+        {
+          "name": "IADR",
+          "products": [
+            "Falcon IADR"
+          ],
+          "value": [
+            "Shadow IA",
+            "Prompt protection",
+            "Guardrails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "A10",
+      "description": "Soluciones de seguridad DDoS balanceo y  a aseguramiento de aplicaciones WAAP, WAF, ADC, SLB, GSL; DDoS",
+      "solutions": [
+        {
+          "name": "ADC",
+          "products": [
+            "Thunder"
+          ],
+          "value": [
+            "Balanceo y aceleracion de aplicaciones"
+          ]
+        },
+        {
+          "name": "WAAP",
+          "products": [
+            "Thunder WAAP - Fastly"
+          ],
+          "value": [
+            "Aseguramiento de servicios Web",
+            "Aseguramiento de API",
+            "Proteccion de ataques de BOT"
+          ]
+        },
+        {
+          "name": "Anti DDoS",
+          "products": [
+            "Thunder CFW"
+          ],
+          "value": [
+            "Aseguramiento de DNS",
+            "Aseguramiento de Canales"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dynatrace",
+      "description": "Servicios de observabilidad de aplicaciones de negocio",
+      "solutions": []
+    },
+    {
+      "name": "Netskope",
+      "description": "Provedor de soluciones SASE para asegurar la carga de trabajo remoto de usuarios corporativos",
+      "solutions": [
+        {
+          "name": "SSE",
+          "products": [],
+          "value": []
+        },
+        {
+          "name": "ZTNA",
+          "products": [],
+          "value": []
+        },
+        {
+          "name": "DLP",
+          "products": [],
+          "value": []
+        },
+        {
+          "name": "FW",
+          "products": [],
+          "value": []
+        },
+        {
+          "name": "CASB",
+          "products": [],
+          "value": []
+        }
+      ]
+    }
+  ]
+}
