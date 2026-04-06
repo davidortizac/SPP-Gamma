@@ -258,7 +258,8 @@ Devuelve ÚNICAMENTE JSON VÁLIDO y estricto, sin bloques markdown de código:
 
     const payload = {
       contents: [{ parts: [{ text: `Investiga la empresa ${companyName} y genera un perfil comercial y técnico para vender ${solution} de ${manufacturer}.` }] }],
-      systemInstruction: { parts: [{ text: systemPrompt }] }
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      tools: [{ google_search: {} }]
     };
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${activeKey}`;
