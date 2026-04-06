@@ -320,11 +320,14 @@ function exportToPDF() {
   const btn = document.getElementById('downloadPdfBtn');
   if(btn) btn.style.display = 'none';
 
+  // Forzar scroll al inicio para evitar que html2canvas genere hojas en blanco asociadas al Y-offset
+  window.scrollTo(0, 0);
+
   const opt = {
     margin:       [10, 10, 15, 10], // top, left, bottom, right
     filename:     `Gamma_Strategy_${empresaNombre.replace(/\s+/g, '_')}.pdf`,
     image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, logging: false, windowWidth: 1200 },
+    html2canvas:  { scale: 2, useCORS: true, logging: false, windowWidth: 1200, scrollY: 0 },
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak:    { mode: ['css', 'legacy'], avoid: ['section', '.bg-white'] }
   };
