@@ -2,70 +2,173 @@
   "manufacturers": [
     {
       "name": "Fortinet",
-      "description": "Seguridad de red, SASE, ZTNA, SOC y protección de infraestructura.",
+      "description": "Seguridad de red, SASE, ZTNA, SOC y protección de infraestructura OT con la plataforma más amplia en ciberseguridad.",
       "solutions": [
         {
-          "name": "NGFW",
+          "name": "Secure Networking",
           "products": [
             "FortiGate",
+            "FortiSwitch",
+            "FortiAP",
             "FortiManager",
-            "FortiAnalyzer"
+            "FortiNAC",
+            "FortiExtender",
+            "FortiGate Cloud",
+            "FortiEdge Cloud",
+            "FortiAIOps",
+            "FortiFone",
+            "FortiVoice",
+            "FortiCamera",
+            "FortiRecorder",
+            "FortiConverter",
+            "FGaaS"
           ],
           "value": [
-            "Segmentación",
-            "Inspección avanzada",
-            "Visibilidad centralizada"
+            "Convergencia de red y seguridad con aceleración ASIC",
+            "Conectividad Ethernet y Wi-Fi protegida",
+            "Control de acceso y visibilidad de dispositivos (NAC)",
+            "Gestión centralizada de infraestructura Fortinet",
+            "Extensión de conectividad LTE y LAN",
+            "Comunicaciones unificadas seguras",
+            "Seguridad física con videovigilancia inteligente",
+            "Migración automatizada de firewall"
           ]
         },
         {
-          "name": "SASE",
+          "name": "Unified SASE",
           "products": [
+            "FortiGate SD-WAN",
+            "FortiClient ZTA Agent",
+            "FortiProxy",
+            "FortiCASB",
+            "FortiClient EPP Agent",
             "FortiSASE",
-            "FortiClient",
-            "FortiAuthenticator"
+            "FortiMonitor",
+            "FortiGate VM",
+            "FortiWeb",
+            "FortiGSLB",
+            "FortiGate CNF",
+            "FortiADC",
+            "FortiDDoS",
+            "FortiFlex",
+            "FortiPoints"
           ],
           "value": [
-            "Acceso seguro",
-            "Políticas unificadas",
-            "Experiencia remota"
+            "SD-WAN seguro y centrado en aplicaciones",
+            "Acceso remoto seguro y reducción de superficie de ataque (ZTNA)",
+            "Control de cumplimiento y acceso a internet",
+            "Prevención de configuraciones incorrectas en SaaS",
+            "Protección de endpoint con AV, URL y Sandbox",
+            "Servicios de seguridad entregados desde la nube (SSE)",
+            "Monitoreo de experiencia digital (DEM)",
+            "Firewall cloud-native para entornos multi-cloud",
+            "Protección de aplicaciones web (WAF)",
+            "Continuidad de negocio con balanceo global",
+            "Protección DDoS con inspección en capas 3, 4 y 7",
+            "Licenciamiento flexible por consumo"
           ]
         },
         {
-          "name": "SOC / SIEM",
+          "name": "AI-Powered FortiGuard Security",
           "products": [
+            "FortiGuard Web Filtering",
+            "FortiGuard IPS",
+            "FortiGuard AV",
+            "FortiGuard Sandbox",
+            "FortiGuard IL MPS",
+            "FortiGuard Application Control",
+            "FortiGuard Attack Surface",
+            "FortiGuard DLP",
+            "FortiGuard OT Security Services",
+            "FortiGuard IoC",
+            "FortiGuard IL CASB"
+          ],
+          "value": [
+            "Inteligencia de amenazas en tiempo real con IA",
+            "Filtrado web y control de aplicaciones",
+            "Protección contra amenazas desconocidas y 0-day",
+            "Prevención de intrusiones (IPS)",
+            "Prevención de fuga de datos (DLP)",
+            "Indicadores de compromiso (IoC)",
+            "Servicios de seguridad para entornos OT"
+          ]
+        },
+        {
+          "name": "Security Operations",
+          "products": [
+            "FortiAnalyzer",
             "FortiSIEM",
+            "FortiEDR/XDR",
             "FortiSOAR",
-            "FortiAnalyzer"
+            "FortiNDR",
+            "FortiMail",
+            "FortiSandbox",
+            "FortiToken",
+            "FortiAuthenticator",
+            "FortiGuard MDR Service",
+            "FortiRecon",
+            "FortiPAM",
+            "SOCaaS",
+            "IR Services",
+            "FortiDeceptor",
+            "FortiTrust Identity",
+            "FortiGuest",
+            "FortiCNAPP",
+            "FortiDLP",
+            "FortiTester",
+            "FortiDevSec",
+            "FortiDAST",
+            "FortiScanner Cloud",
+            "FortiAI"
           ],
           "value": [
-            "Correlación",
-            "Automatización",
-            "Respuesta"
+            "Gestión de logs y monitoreo centralizado (SIEM)",
+            "Automatización de operaciones de seguridad (SOAR)",
+            "Detección y respuesta en endpoint (EDR/XDR)",
+            "Análisis de red con IA para detección de amenazas (NDR)",
+            "Protección contra amenazas de correo electrónico",
+            "Sandbox con IA contra amenazas desconocidas y 0-day",
+            "Autenticación multifactor (MFA) y gestión de identidades",
+            "Detección y respuesta gestionada (MDR)",
+            "Protección de riesgo digital externo e interno",
+            "Gestión de acceso privilegiado (PAM)",
+            "Monitoreo continuo y triage de incidentes (SOCaaS)",
+            "Deception para detección temprana de ataques",
+            "Seguridad de aplicaciones desde el código hasta la nube (CNAPP)",
+            "DLP en endpoint y gestión de riesgo interno",
+            "Pruebas de rendimiento y simulación de ataques (BAS)",
+            "Asistente GenAI integrado para SOC y NOC (FortiAI)"
           ]
         },
         {
-          "name": "Endpoint",
+          "name": "OT Security Platform",
           "products": [
-            "FortiEPP",
-            "FortiEDR",
-            "FortiXDR"
+            "FortiGate (OT Security Service)",
+            "FortiSRA",
+            "Ruggedized Products"
           ],
           "value": [
-            "Aseguramiento del endpoint",
-            "Seguridad ante ataques de ramsonware",
-            "Deteccion y respuesta de ataques en el endpoint"
+            "Protección contra amenazas específicas de OT",
+            "Acceso remoto seguro sin agente para entornos OT",
+            "Equipos reforzados para entornos industriales y exteriores hostiles",
+            "Integración de redes OT al SOC y planes de respuesta a incidentes"
           ]
         },
         {
-          "name": "WAAP",
+          "name": "Open Ecosystem",
           "products": [
-            "FortiWEB"
+            "FNDN",
+            "Fabric Connectors",
+            "Fabric API",
+            "DevOps Tools",
+            "Extended Ecosystem"
           ],
           "value": [
-            "Seguridad de aplicaciones web",
-            "Seguridad de API",
-            "Seguridad de ataques con BOT",
-            "Aseguramiento de aplicaciones que usan IA"
+            "Desarrollo de soluciones personalizadas para la comunidad Fortinet",
+            "Integraciones nativas para automatización y seguridad",
+            "Integraciones de socios para visibilidad y protección end-to-end",
+            "Scripts para automatización de tareas de red y seguridad",
+            "Integración con terceros para compartir inteligencia de amenazas"
           ]
         }
       ]
