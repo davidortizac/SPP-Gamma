@@ -256,6 +256,18 @@ function renderReport(data) {
 
     // 10. OSINT
     $('outOsintTitular').textContent = data.herramientas?.osint?.titularNoticia || data.riesgos?.riesgoPrincipal || '-';
+    
+    // Mapeo dinamico de URL en UI si existe
+    const osintUrl = data.herramientas?.osint?.urlNoticia;
+    const urlEl = $('outOsintUrl');
+    if (osintUrl) {
+        urlEl.textContent = "Ver Fuente / Referencia Mapeada";
+        urlEl.href = osintUrl;
+        urlEl.classList.remove('hidden');
+    } else {
+        urlEl.classList.add('hidden');
+    }
+
     $('outOsintPitch').textContent = data.herramientas?.osint?.pitchUrgencia || '-';
     renderSimpleList('outCompetenciasList', data.competencias, '<li class="text-sm text-slate-700 flex items-center gap-2 w-full"><div class="w-1 h-1 bg-slate-400 rounded-full"></div>{TEXT}</li>');
 

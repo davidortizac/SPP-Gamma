@@ -10,6 +10,7 @@ const CATALOG_PATH = path.join(__dirname, 'catalog.json');
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/imagenes', express.static(path.join(__dirname, 'imagenes')));
 
 // ─── Catalog helpers ──────────────────────────────────────────────────────────
 function loadCatalog() {
@@ -241,6 +242,7 @@ Devuelve ÚNICAMENTE JSON VÁLIDO y estricto, sin bloques markdown de código:
     },
     "osint": {
       "titularNoticia": "Titular de una brecha reciente real en su sector",
+      "urlNoticia": "https://url-publica-para-referenciar.com",
       "pitchUrgencia": "Argumento de impacto o urgencia para la reunión"
     }
   },
