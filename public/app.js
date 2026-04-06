@@ -10,7 +10,7 @@ function $(id) {
   return document.getElementById(id);
 }
 
-// ─── Tab switching ────────────────────────────────────────────────────────────
+// ─── Utilidades Generales ──────────────────────────────────────────────────
 function switchTab(tab) {
   const isAnalysis = tab === 'analysis';
   $('tab-analysis').classList.toggle('hidden', !isAnalysis);
@@ -20,7 +20,39 @@ function switchTab(tab) {
   if (!isAnalysis) renderCatalogEditor();
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toastNotification');
+    document.getElementById('toastMessage').textContent = message;
+    if (!toast) return;
+    
+    document.getElementById('toastIcon').textContent = type === 'error' ? '❌' : (type === 'success' ? '✅' : 'ℹ️');
+    
+    // Reset classes
+    toast.className = "fixed bottom-5 right-5 px-6 py-4 rounded-lg shadow-2xl transform transition-all duration-300 z-50 flex items-center gap-3 no-print";
+    
+    if (type === 'error') toast.classList.add('bg-red-600', 'text-white');
+    else if (type === 'success') toast.classList.add('bg-green-600', 'text-white');
+    else toast.classList.add('bg-slate-800', 'text-white');
+
+    toast.classList.remove('translate-y-32', 'opacity-0');
+    setTimeout(() => {
+        toast.classList.add('translate-y-32', 'opacity-0');
+    }, 4000);
+}
+
+function toggleAccordion(contentId, arrowId) {
+    const content = document.getElementById(contentId);
+    const arrow = document.getElementById(arrowId);
+    if(content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        arrow.style.transform = 'rotate(180deg)';
+    } else {
+        content.classList.add('hidden');
+        arrow.style.transform = 'rotate(0deg)';
+    }
+}
+
+// ─── Inicialización y Carga de Catálogo ────────────────────────────────────
 async function init() {
   await Promise.all([loadConfig(), loadCatalogFromAPI()]);
   loadManufacturers();
@@ -32,10 +64,10 @@ async function loadConfig() {
     const res = await fetch('/api/config');
     appConfig = await res.json();
     $('statusText').textContent = appConfig.hasServerKey
-      ? `Servidor listo. Modelo por defecto: ${appConfig.defaultModel}.`
-      : 'No hay GEMINI_API_KEY en el servidor. Debes pegar una API key en la interfaz.';
+      ? `Servidor listo. Modelo: ${appConfig.defaultModel}.`
+      : 'No hay GEMINI_API_KEY en servidor. Usa el campo superior.';
   } catch (_e) {
-    $('statusText').textContent = 'No fue posible leer la configuración del servidor.';
+    $('statusText').textContent = 'Error leyendo la configuración del servidor.';
   }
 }
 
@@ -55,25 +87,6 @@ function loadManufacturers() {
     .map((m, i) => `<option value="${m.name}" ${i === 0 ? 'selected' : ''}>${m.name}</option>`)
     .join('');
   updateSolutions();
-  renderPortfolioInfo();
-}
-
-function bindEvents() {
-  $('manufacturerSelect').addEventListener('change', () => {
-    updateSolutions();
-    renderPortfolioInfo();
-  });
-  $('solutionSelect').addEventListener('change', renderPortfolioInfo);
-  $('generateBtn').addEventListener('click', handleGenerate);
-  $('demoBtn').addEventListener('click', loadDemo);
-  $('companyInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleGenerate();
-  });
-}
-
-function getSelectedManufacturer() {
-  const name = $('manufacturerSelect').value;
-  return state.manufacturers.find((m) => m.name === name);
 }
 
 function updateSolutions() {
@@ -85,61 +98,41 @@ function updateSolutions() {
     .join('');
 }
 
-function getSelectedSolution() {
-  const manufacturer = getSelectedManufacturer();
-  const solutionName = $('solutionSelect').value;
-  return manufacturer?.solutions.find((s) => s.name === solutionName);
+function getSelectedManufacturer() {
+  const name = $('manufacturerSelect').value;
+  return state.manufacturers.find((m) => m.name === name);
 }
 
-function renderPortfolioInfo() {
-  const manufacturer = getSelectedManufacturer();
-  const solution = getSelectedSolution();
-
-  $('portfolioInfo').innerHTML = `
-    <div>
-      <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Fabricante</p>
-      <p class="text-lg font-black text-slate-900">${manufacturer?.name || '-'}</p>
-      <p class="text-sm text-slate-600 mt-1">${manufacturer?.description || ''}</p>
-    </div>
-    <div>
-      <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Solución</p>
-      <p class="text-base font-bold text-blue-700">${solution?.name || '-'}</p>
-    </div>
-    <div>
-      <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Productos sugeridos</p>
-      <div class="flex flex-wrap gap-2">
-        ${(solution?.products || []).map((p) => `<span class="rounded-full bg-white border border-slate-200 px-3 py-1 text-xs font-medium">${p}</span>`).join('')}
-      </div>
-    </div>
-    <div>
-      <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Valor esperado</p>
-      <div class="flex flex-wrap gap-2">
-        ${(solution?.value || []).map((v) => `<span class="rounded-full bg-blue-100 text-blue-900 px-3 py-1 text-xs font-medium">${v}</span>`).join('')}
-      </div>
-    </div>
-  `;
+function bindEvents() {
+  $('manufacturerSelect').addEventListener('change', updateSolutions);
+  $('companyInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleGenerate();
+  });
 }
 
 function showLoading(isLoading) {
-  $('loadingBox').classList.toggle('hidden', !isLoading);
-  $('generateBtn').disabled = isLoading;
-  $('demoBtn').disabled = isLoading;
+    const btn = $('generateBtn');
+    const loadUI = $('loadingOverlay');
+    const currentStatus = $('statusText');
+    const reportContainer = $('reportContainer');
+
+    if (isLoading) {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        loadUI.classList.remove('hidden');
+        loadUI.classList.add('flex');
+        reportContainer.classList.add('hidden');
+        currentStatus.textContent = 'Analizando...';
+    } else {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        loadUI.classList.add('hidden');
+        loadUI.classList.remove('flex');
+    }
 }
 
-function showError(message) {
-  const el = $('errorText');
-  if (!message) {
-    el.classList.add('hidden');
-    el.textContent = '';
-    return;
-  }
-  el.textContent = message;
-  el.classList.remove('hidden');
-}
-
+// ─── Generación de Análisis ─────────────────────────────────────────────────
 async function handleGenerate() {
-  showError('');
-
   const companyName = $('companyInput').value.trim();
   const manufacturer = $('manufacturerSelect').value;
   const solution = $('solutionSelect').value;
@@ -148,17 +141,17 @@ async function handleGenerate() {
   const apiKey = $('apiKeyInput').value.trim();
 
   if (!companyName) {
-    showError('Debes indicar la empresa objetivo.');
+    showToast('Debes indicar la empresa objetivo.', 'error');
+    $('companyInput').focus();
     return;
   }
 
   if (!appConfig.hasServerKey && !apiKey) {
-    showError('No existe API key en el servidor. Pega una API key de Gemini en el campo superior.');
+    showToast('Pega una API key de Gemini en la esquina superior derecha.', 'error');
     return;
   }
 
   showLoading(true);
-  $('statusText').textContent = 'Generando análisis multimarca...';
 
   try {
     const response = await fetch('/api/generate-profile', {
@@ -168,145 +161,118 @@ async function handleGenerate() {
     });
 
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'No fue posible generar el análisis.');
+    if (!response.ok) throw new Error(data.error || 'Fallo en IA');
 
     state.report = data;
     renderReport(data);
-    $('statusText').textContent = 'Análisis generado correctamente.';
+    showToast('Análisis generado exitosamente', 'success');
   } catch (error) {
-    showError(error.message || 'Error inesperado.');
-    $('statusText').textContent = 'Falló la generación del análisis.';
+    showToast(error.message || 'Error inesperado generando perfil', 'error');
   } finally {
     showLoading(false);
   }
 }
 
-function loadDemo() {
-  const demo = {
-    empresa: 'Bancolombia',
-    fabricante: 'F5',
-    solucion: 'WAAP',
-    resumenEjecutivo: 'Bancolombia depende de canales digitales de alto tráfico y expuestos a fraude, automatización maliciosa y presión regulatoria. Una estrategia WAAP ayuda a proteger banca web, APIs y experiencia digital con controles más específicos para aplicaciones críticas.',
-    perfilamiento: {
-      sector: 'Servicios financieros',
-      geografia: 'Colombia y operación regional',
-      core: 'Servicios bancarios, canales transaccionales, pagos y productos financieros para personas y empresas.',
-      rol: 'CISO / Director de Seguridad / Líder de Canales Digitales',
-      activosCriticos: ['Portal transaccional', 'APIs de banca móvil', 'Identidad digital', 'Integraciones con terceros']
-    },
-    riesgos: {
-      tiposDatos: [
-        { label: 'Datos transaccionales', value: 35 },
-        { label: 'Credenciales y sesiones', value: 25 },
-        { label: 'Datos personales', value: 20 },
-        { label: 'APIs y metadatos', value: 20 }
-      ],
-      riesgoPrincipal: 'Abuso de bots, explotación de APIs y ataques sobre aplicaciones expuestas.',
-      impacto: 'Fraude, indisponibilidad, sanciones y deterioro de confianza del cliente.'
-    },
-    casosDeUso: [
-      {
-        titulo: 'Protección de portal transaccional',
-        dolor: 'Aplicaciones críticas con exposición constante a intentos de explotación y automatización maliciosa.',
-        solucion: 'WAAP de F5 permite combinar WAF, defensa de bots y protección de APIs con visibilidad centralizada.',
-        resultado: 'Menor superficie de fraude y mejor continuidad del servicio.'
-      },
-      {
-        titulo: 'Seguridad de APIs',
-        dolor: 'Inventario parcial de APIs y dificultad para detectar comportamiento anómalo.',
-        solucion: 'Descubrimiento y protección de APIs en canales móviles y ecosistemas de terceros.',
-        resultado: 'Reducción del riesgo de abuso y mejor gobierno del ciclo de vida API.'
-      }
-    ],
-    pitch: {
-      apertura: 'Vemos una organización con una dependencia crítica de canales digitales y una superficie de exposición creciente en aplicaciones y APIs.',
-      valor: 'F5 WAAP puede ayudarles a unificar protección web, defensa de bots y seguridad de APIs con foco en disponibilidad, visibilidad y reducción de fraude.',
-      cierre: 'La siguiente conversación debería centrarse en priorizar aplicaciones y APIs de mayor criticidad para construir una ruta de protección por fases.'
-    },
-    competencias: ['Protección avanzada de aplicaciones', 'Mitigación de bots y abuso automatizado', 'Visibilidad y postura de APIs'],
-    normativo: [
-      { norma: 'Habeas Data', descripcion: 'Protección de datos personales y trazabilidad del tratamiento.' },
-      { norma: 'Circulares de la SFC', descripcion: 'Controles de seguridad y continuidad en entidades vigiladas.' }
-    ],
-    preguntasDescubrimiento: [
-      '¿Qué aplicaciones y APIs tienen hoy mayor impacto en ingreso o experiencia del cliente?',
-      '¿Cómo están detectando abuso automatizado o fraude sobre canales digitales?',
-      '¿Tienen visibilidad completa del inventario y exposición de APIs?'
-    ],
-    arquitecturaSugerida: ['F5 Distributed Cloud WAAP', 'Bot Defense', 'API Security', 'Integración con SIEM/SOC'],
-    fuentes: ['bancolombia.com', 'superfinanciera.gov.co', 'f5.com']
-  };
-
-  $('companyInput').value = demo.empresa;
-  $('countryInput').value = 'Colombia';
-  $('manufacturerSelect').value = demo.fabricante;
-  updateSolutions();
-  $('solutionSelect').value = demo.solucion;
-  renderPortfolioInfo();
-  renderReport(demo);
-  $('statusText').textContent = 'Demo cargada correctamente.';
-  showError('');
-}
-
 function renderReport(data) {
-  $('reportSection').classList.remove('hidden');
-  $('rEmpresa').textContent = data.empresa || '-';
-  $('rFabricante').textContent = data.fabricante || '-';
-  $('rSolucion').textContent = data.solucion || '-';
-  $('rSector').textContent = data.perfilamiento?.sector || '-';
-  $('rGeografia').textContent = data.perfilamiento?.geografia || '-';
-  $('rRol').textContent = data.perfilamiento?.rol || '-';
-  $('rResumen').textContent = data.resumenEjecutivo || '-';
-  $('rRiesgoPrincipal').textContent = data.riesgos?.riesgoPrincipal || '-';
-  $('rImpacto').textContent = data.riesgos?.impacto || '-';
-  $('pApertura').textContent = data.pitch?.apertura || '-';
-  $('pValor').textContent = data.pitch?.valor || '-';
-  $('pCierre').textContent = data.pitch?.cierre || '-';
+    $('reportContainer').classList.remove('hidden');
+    $('statusText').textContent = 'Análisis completado';
 
-  renderSimpleList('activosList', data.perfilamiento?.activosCriticos, 'bg-slate-50 border-slate-200');
-  renderSimpleList('competenciasList', data.competencias, 'bg-blue-50 border-blue-100');
-  renderSimpleList('arquitecturaList', data.arquitecturaSugerida, 'bg-emerald-50 border-emerald-100');
-  renderSimpleList('preguntasList', data.preguntasDescubrimiento, 'bg-slate-50 border-slate-200');
-  renderSimpleList('fuentesList', data.fuentes, 'bg-slate-50 border-slate-200');
+    // Headers
+    $('displaySolutionIntro').textContent = `${data.fabricante} - ${data.solucion}`;
+    $('displayCompanyNameIntro').textContent = data.empresa;
 
-  const normativoList = $('normativoList');
-  normativoList.innerHTML = '';
-  (data.normativo || []).forEach((item) => {
-    normativoList.innerHTML += `
-      <li class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-        <p class="font-bold text-slate-900">${item.norma || '-'}</p>
-        <p class="text-slate-600 mt-1">${item.descripcion || ''}</p>
-      </li>
-    `;
-  });
+    // 1. Visión Ejecutiva
+    $('outEmpresa').textContent = data.empresa || '-';
+    $('outSector').textContent = data.perfilamiento?.sector || '-';
+    $('outRol').textContent = data.perfilamiento?.rol || '-';
+    $('outCore').textContent = data.perfilamiento?.core || '-';
+    $('outImpacto').textContent = data.resumenEjecutivo || '-';
 
-  const casos = $('casosContainer');
-  casos.innerHTML = '';
-  (data.casosDeUso || []).forEach((item) => {
-    casos.innerHTML += `
-      <div class="rounded-xl border border-slate-200 p-4 bg-slate-50">
-        <h4 class="font-black text-slate-900">${item.titulo || '-'}</h4>
-        <p class="text-sm mt-2"><span class="font-bold">Dolor:</span> ${item.dolor || ''}</p>
-        <p class="text-sm mt-2"><span class="font-bold">Solución:</span> ${item.solucion || ''}</p>
-        <p class="text-sm mt-2"><span class="font-bold">Resultado:</span> ${item.resultado || ''}</p>
-      </div>
-    `;
-  });
+    // 2. Propuesta / Pitch
+    $('outFabricante').textContent = data.fabricante || '-';
+    $('outPitchValor').textContent = data.pitch?.valor || '-';
+    renderSimpleList('outArquitecturaList', data.arquitecturaSugerida, '<li class="text-sm text-slate-700 flex items-center gap-2"><div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>{TEXT}</li>');
 
-  renderChart(data.riesgos?.tiposDatos || []);
-  window.scrollTo({ top: document.body.scrollHeight * 0.15, behavior: 'smooth' });
+    // 3. Riesgos
+    $('outRiesgoResidual').textContent = data.riesgos?.impacto || '-';
+    $('outActivosCriticos').innerHTML = (data.perfilamiento?.activosCriticos || []).map(a => 
+        `<span class="bg-white border border-slate-200 shadow-sm px-3 py-1 text-xs text-slate-700 rounded-full">${a}</span>`
+    ).join('');
+    renderChart(data.riesgos?.tiposDatos || []);
+
+    // 4. Preguntas
+    $('outRompehielo').textContent = data.contextoEstrategico?.rompehielo || data.pitch?.apertura || '-';
+    renderSimpleList('outPreguntasList', data.preguntasDescubrimiento, '<li class="flex items-start gap-2 text-sm text-slate-700"><span class="text-blue-500 font-bold">»</span><span>{TEXT}</span></li>');
+
+    // 5. Normativo
+    const normasList = $('normasList');
+    normasList.innerHTML = (data.normativo || []).map(n => `
+        <li class="bg-slate-50 border border-slate-200 p-4 rounded-md">
+            <h5 class="font-bold text-slate-800 text-sm mb-1">${n.norma || '-'}</h5>
+            <p class="text-sm text-slate-600">${n.descripcion || '-'}</p>
+        </li>
+    `).join('');
+
+    // 6. Casos Uso
+    const casosCont = $('casosContainer');
+    casosCont.innerHTML = (data.casosDeUso || []).map((c, idx) => `
+        <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+            <button onclick="toggleAccordion('cu-cont-${idx}', 'cu-arr-${idx}')" class="w-full text-left px-5 py-4 bg-slate-50 hover:bg-slate-100 flex justify-between items-center transition-colors">
+                <span class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">${idx+1}</span>
+                    ${c.titulo}
+                </span>
+                <span id="cu-arr-${idx}" class="text-slate-400 transition-transform">▼</span>
+            </button>
+            <div id="cu-cont-${idx}" class="p-5 border-t border-slate-200 hidden space-y-3 bg-white">
+                <div><span class="text-xs font-bold text-slate-400 uppercase">Dolor Operativo:</span><p class="text-sm text-slate-700 mt-1">${c.dolor}</p></div>
+                <div><span class="text-xs font-bold text-slate-400 uppercase">Propuesta ${data.fabricante}:</span><p class="text-sm text-slate-700 mt-1">${c.solucion}</p></div>
+                <div class="bg-blue-50 p-3 rounded text-sm text-blue-800 border border-blue-100"><span class="font-bold">Resultado:</span> ${c.resultado}</div>
+            </div>
+        </div>
+    `).join('');
+
+    // 7. Objeciones
+    const objCont = $('objecionesContainer');
+    objCont.innerHTML = (data.objeciones || []).map((o, idx) => `
+        <div class="bg-white rounded-lg border border-indigo-100 p-4 shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+            <p class="font-bold text-indigo-900 text-sm flex items-start gap-2">
+                <span class="text-indigo-400">❓</span> ${o.objecion}
+            </p>
+            <p class="text-sm text-slate-700 mt-2 pl-6 border-t border-indigo-50 pt-2 border-dashed">
+                <span class="font-bold text-green-600">💡 Respuesta:</span> ${o.respuesta}
+            </p>
+        </div>
+    `).join('');
+
+    // 8. Resumen C-Level
+    $('outResumenTitulo').textContent = data.herramientas?.resumenCISO?.titulo || 'Resumen Ejecutivo';
+    renderSimpleList('outResumenList', data.herramientas?.resumenCISO?.vinetas, '<li class="flex items-start gap-2 bg-slate-50 p-2 rounded border border-slate-100"><span class="text-green-500">✔</span><span class="text-sm text-slate-700">{TEXT}</span></li>');
+
+    // 9. Email
+    $('outEmailAsunto').textContent = data.herramientas?.email?.asunto || '-';
+    $('outEmailCuerpo').textContent = data.herramientas?.email?.cuerpo || '-';
+
+    // 10. OSINT
+    $('outOsintTitular').textContent = data.herramientas?.osint?.titularNoticia || data.riesgos?.riesgoPrincipal || '-';
+    $('outOsintPitch').textContent = data.herramientas?.osint?.pitchUrgencia || '-';
+    renderSimpleList('outCompetenciasList', data.competencias, '<li class="text-sm text-slate-700 flex items-center gap-2 w-full"><div class="w-1 h-1 bg-slate-400 rounded-full"></div>{TEXT}</li>');
+
+    // 11. Antes / Despues
+    renderSimpleList('antesList', data.impactoAntesDespues?.antes, '<li class="flex items-start gap-2 text-sm text-slate-700"><span class="text-red-500 mt-0.5">⊗</span> <span>{TEXT}</span></li>');
+    renderSimpleList('despuesList', data.impactoAntesDespues?.despues, '<li class="flex items-start gap-2 text-sm text-slate-200"><span class="text-blue-400 mt-0.5">✓</span> <span>{TEXT}</span></li>');
+
+    window.scrollTo({ top: $('reportContainer').offsetTop - 20, behavior: 'smooth' });
 }
 
-function renderSimpleList(elementId, items = [], classes = '') {
+function renderSimpleList(elementId, items = [], template = '<li>{TEXT}</li>') {
   const el = $(elementId);
-  el.innerHTML = '';
-  (items || []).forEach((item) => {
-    el.innerHTML += `<li class="rounded-xl border p-3 ${classes}">${item}</li>`;
-  });
+  el.innerHTML = (items || []).map(item => template.replace('{TEXT}', item)).join('');
 }
 
 function renderChart(dataObj) {
-  const ctx = $('riskChart').getContext('2d');
+  const ctx = $('dataRiskChart').getContext('2d');
   if (currentChart) currentChart.destroy();
 
   currentChart = new Chart(ctx, {
@@ -315,115 +281,128 @@ function renderChart(dataObj) {
       labels: dataObj.map((d) => d.label),
       datasets: [{
         data: dataObj.map((d) => d.value),
-        backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444', '#64748b'],
+        backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#64748b'],
         borderWidth: 2,
-        borderColor: '#ffffff'
+        borderColor: '#ffffff',
+        hoverOffset: 4
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'bottom' }
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: { label: function(context) { return ' ' + context.label + ': ' + context.raw + '%'; } } }
       },
-      cutout: '62%'
+      cutout: '65%'
     }
   });
 }
 
-// ─── PDF Download ─────────────────────────────────────────────────────────────
-async function downloadPDF() {
-  const btn = $('downloadPdfBtn');
-  const originalText = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = `<svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Generando…`;
-
-  try {
-    const element = $('reportSection');
-
-    // Forzar que el gráfico se renderice antes de capturar
-    if (currentChart) currentChart.update();
-
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      backgroundColor: '#f8fafc',
-      windowWidth: 1280
+function exportToPDF() {
+    showToast('Generando reporte PDF, espera un momento...', 'info');
+    const element = document.body;
+    const empresaNombre = document.getElementById('outEmpresa').textContent || 'Empresa';
+    
+    const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `Gamma_Strategy_${empresaNombre.replace(/\s+/g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(element).save().then(() => {
+        showToast('PDF descargado exitosamente', 'success');
+    }).catch(err => {
+        showToast('Error al generar PDF', 'error');
+        console.error(err);
     });
+}
 
-    const { jsPDF } = globalThis.jspdf;
-    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const margin = 10;
-    const printW = pageW - margin * 2;
-    const printH = (canvas.height * printW) / canvas.width;
-
-    let posY = margin;
-    let remaining = printH;
-    let srcY = 0;
-
-    // Portada: título y metadatos en primera página antes del contenido
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(18);
-    pdf.setTextColor(15, 23, 42);
-    pdf.text('Gamma Portfolio Explorer', margin, posY);
-    posY += 7;
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(10);
-    pdf.setTextColor(71, 85, 105);
-    const empresa = state.report?.empresa || '';
-    const fabricante = state.report?.fabricante || '';
-    const solucion = state.report?.solucion || '';
-    pdf.text(`Empresa: ${empresa}   |   Fabricante: ${fabricante}   |   Solución: ${solucion}`, margin, posY);
-    posY += 4;
-    pdf.text(`Generado el ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}`, margin, posY);
-    posY += 6;
-
-    // Línea divisora
-    pdf.setDrawColor(203, 213, 225);
-    pdf.setLineWidth(0.4);
-    pdf.line(margin, posY, pageW - margin, posY);
-    posY += 4;
-
-    // Primer fragmento de imagen en la página 1
-    const firstSliceH = Math.min(remaining, pageH - posY - margin);
-    const firstSliceCanvas = document.createElement('canvas');
-    firstSliceCanvas.width = canvas.width;
-    firstSliceCanvas.height = (firstSliceH * canvas.width) / printW;
-    const firstCtx = firstSliceCanvas.getContext('2d');
-    firstCtx.drawImage(canvas, 0, srcY, canvas.width, firstSliceCanvas.height, 0, 0, canvas.width, firstSliceCanvas.height);
-    pdf.addImage(firstSliceCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', margin, posY, printW, firstSliceH);
-    srcY += firstSliceCanvas.height;
-    remaining -= firstSliceH;
-
-    // Páginas adicionales
-    while (remaining > 1) {
-      pdf.addPage();
-      const sliceH = Math.min(remaining, pageH - margin * 2);
-      const sliceCanvas = document.createElement('canvas');
-      sliceCanvas.width = canvas.width;
-      sliceCanvas.height = (sliceH * canvas.width) / printW;
-      const ctx = sliceCanvas.getContext('2d');
-      ctx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
-      pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, printW, sliceH);
-      srcY += sliceCanvas.height;
-      remaining -= sliceH;
+function loadDemo() {
+  $('companyInput').value = "Banco Industrial Test";
+  showToast("Mock Data Loaded, use 'Generar' si quieres consultar la IA", "info");
+  
+  const mockData = {
+    "empresa": "Banco Industrial Test",
+    "fabricante": getSelectedManufacturer()?.name || "Palo Alto Networks",
+    "solucion": $('solutionSelect').value || "Prisma SD-WAN",
+    "resumenEjecutivo": "Transformación de infraestructura perimetral hacia redes escalables con enfoque Zero Trust.",
+    "perfilamiento": {
+        "sector": "Sector Financiero y Banca",
+        "geografia": "Latinoamérica Central",
+        "core": "Intermediación financiera, banca digital y corporativa.",
+        "rol": "CIO / CTO de Infraestructura IT",
+        "activosCriticos": ["Portal Core Bancario", "Conexión de Sucursales", "Datos PCI"]
+    },
+    "riesgos": {
+        "tiposDatos": [
+            { "label": "Canal Digital", "value": 40 },
+            { "label": "Conexión Sucursales", "value": 35 },
+            { "label": "Datos PCI", "value": 25 }
+        ],
+        "riesgoPrincipal": "Indisponibilidad en la red transaccional por enlaces caídos.",
+        "impacto": "Interrupción de transacciones, afectación en ATMs y multas por SLA nulos."
+    },
+    "contextoEstrategico": {
+        "impacto": "La gestión individual de routers MPLS es insostenible.",
+        "rompehielo": "¿Cómo están garantizando resiliencia 100% de la red de sucursales ante caídas de ISP?"
+    },
+    "pitch": {
+        "apertura": "He visto la expansión en las nuevas agencias digitales.",
+        "valor": "Con la solución de SD-WAN podemos reducir el OPEX de MPLS e inyectar seguridad ML en cada rama.",
+        "cierre": "Evaluemos un piloto no invasivo de SD-WAN en 2 oficinas."
+    },
+    "casosDeUso": [
+        {
+            "titulo": "Reemplazo de MPLS Obsoleto",
+            "dolor": "Contratos costosos de MPLS, dificultad de escalar.",
+            "solucion": "Migrar a conexiones de banda ancha usando SD-WAN seguro.",
+            "resultado": "Bajar OPEX un 40% mejorando latencias al Cloud Core."
+        }
+    ],
+    "competencias": [
+        "Capacidad de SD-WAN nativo basado en Machine Learning.",
+        "Gestión desde Panorama unificada."
+    ],
+    "normativo": [
+        { "norma": "Cumplimiento PCI-DSS", "descripcion": "Cifrado requerido en cualquier conexión externa que lleve transacciones." }
+    ],
+    "preguntasDescubrimiento": [
+        "¿Cuáles son los cuellos de botella actuales hacia la nube pública?",
+        "¿Manejan las políticas de VPN localmente o de manera centralizada?"
+    ],
+    "arquitecturaSugerida": [
+        "Dispositivos SD-WAN tipo ION",
+        "Orquestación en la nube",
+        "Firewall de siguiente generación"
+    ],
+    "objeciones": [
+        { "objecion": "Es muy caro migrar 100 sitios de golpe.", "respuesta": "Se plantea un modelo de convivencia y despliegue por grupos críticos primero." }
+    ],
+    "herramientas": {
+        "email": {
+            "asunto": "Optimización Segura de Red de Sucursales - Banca Test",
+            "cuerpo": "Hola [Nombre],\n\nHe estado investigando la apertura de agencias de Banca Test y..."
+        },
+        "resumenCISO": {
+            "titulo": "Modernización de Conectividad con Telemetría e IA",
+            "vinetas": ["Reducción de caídas de ISP", "Ahorro sobre líneas dedicadas"]
+        },
+        "osint": {
+            "titularNoticia": "Entidad bancaria detiene operaciones por 8h debido a falla de capa 2",
+            "pitchUrgencia": "Buscamos evitar el escenario de desconexión mediante enlaces redundantes L7 automatizados."
+        }
+    },
+    "impactoAntesDespues": {
+        "antes": ["Costos MPLS altos", "Fallas por enlace único", "Actualización router a router manual"],
+        "despues": ["Agilidad Cloud Opex", "Active-Active resiliencia", "Zero Touch Provisioning Cero Contacto"]
     }
-
-    const fecha = new Date().toISOString().slice(0, 10);
-    const nombre = [empresa, fabricante, fecha].filter(Boolean).join('_').replaceAll(/\s+/g, '-');
-    pdf.save(`${nombre}.pdf`);
-  } catch (err) {
-    console.error(err);
-    showError('No fue posible generar el PDF. Intenta de nuevo.');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = originalText;
-  }
+  };
+  
+  state.report = mockData;
+  renderReport(mockData);
 }
 
 init();

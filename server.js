@@ -161,10 +161,8 @@ app.post('/api/generate-profile', async (req, res) => {
 
     const systemPrompt = `
 Eres un arquitecto de preventa senior especializado en ciberseguridad, infraestructura y ventas B2B.
-Tu misión es construir un análisis comercial y técnico para una cuenta objetivo y mapearla con una solución de un fabricante específico.
-
-Debes investigar información pública sobre la empresa usando búsqueda web y devolver ÚNICAMENTE un JSON válido.
-No incluyas markdown, comentarios, texto adicional ni bloque de código.
+Tu misión es investigar información real sobre la empresa ingresada usando búsqueda web y contextualizar un análisis consultivo 100% enfocado en el fabricante y solución seleccionados.
+Resalta el valor de la solución para resolver dolores operativos reales.
 
 Contexto de entrada:
 - Empresa: ${companyName}
@@ -173,65 +171,88 @@ Contexto de entrada:
 - País objetivo: ${country || 'No especificado'}
 - Notas adicionales: ${notes || 'Ninguna'}
 
-Devuelve exactamente esta estructura JSON:
+Devuelve ÚNICAMENTE JSON VÁLIDO y estricto, sin bloques markdown de código:
 {
-  "empresa": "Nombre de la empresa",
+  "empresa": "Nombre Oficial",
   "fabricante": "${manufacturer}",
   "solucion": "${solution}",
-  "resumenEjecutivo": "Resumen ejecutivo breve y claro",
+  "resumenEjecutivo": "Resumen ejecutivo breve y claro del caso de uso principal",
   "perfilamiento": {
-    "sector": "Sector o industria real",
+    "sector": "Sector real (ej. Financiero, Salud)",
     "geografia": "País o región principal",
     "core": "Qué hace la empresa y cómo gana dinero",
-    "rol": "Cargo objetivo a contactar",
-    "activosCriticos": ["Activo 1", "Activo 2", "Activo 3"]
+    "rol": "CISO, DPO, CIO o Director de IT objetivo",
+    "activosCriticos": ["Tipos de documentos o activos clave 1", "Activo 2", "Activo 3"]
   },
   "riesgos": {
     "tiposDatos": [
-      { "label": "Tipo de dato 1", "value": 35 },
-      { "label": "Tipo de dato 2", "value": 25 },
-      { "label": "Tipo de dato 3", "value": 20 },
-      { "label": "Tipo de dato 4", "value": 20 }
+      { "label": "Canal expuesto 1", "value": 40 },
+      { "label": "Canal expuesto 2", "value": 30 },
+      { "label": "Canal expuesto 3", "value": 20 },
+      { "label": "Amenaza Interna", "value": 10 }
     ],
-    "riesgoPrincipal": "Principal riesgo asociado a la empresa y a la solución",
-    "impacto": "Impacto operativo, financiero o reputacional"
+    "riesgoPrincipal": "Riesgo primario si no implementan la solución",
+    "impacto": "Consecuencia operativa, reputacional y financiera de perder el control o no asegurar el activo."
+  },
+  "contextoEstrategico": {
+    "impacto": "Impacto operativo por inacción.",
+    "rompehielo": "Pregunta gancho incisiva de Zero Trust o seguridad estratégica."
+  },
+  "pitch": {
+    "apertura": "Apertura consultiva",
+    "valor": "Propuesta de valor de ${manufacturer}",
+    "cierre": "Cierre sugerido para accionables"
   },
   "casosDeUso": [
     {
-      "titulo": "Caso de uso 1",
-      "dolor": "Problema observado o probable",
-      "solucion": "Cómo ayuda la solución seleccionada",
-      "resultado": "Beneficio esperado"
+      "titulo": "Fuga de datos por / Brecha por...",
+      "dolor": "Dolor operativo actual",
+      "solucion": "Solución ${solution}",
+      "resultado": "Beneficio tangible"
     }
   ],
-  "pitch": {
-    "apertura": "Apertura comercial consultiva",
-    "valor": "Propuesta de valor específica del fabricante y la solución",
-    "cierre": "Cierre sugerido para siguiente paso"
-  },
   "competencias": [
-    "Capacidad del fabricante alineada al caso",
-    "Capacidad técnica relevante",
-    "Diferencial competitivo"
+    "Diferenciador 1", "Diferenciador 2"
   ],
   "normativo": [
-    { "norma": "Norma o regulación", "descripcion": "Por qué aplica" }
+    { "norma": "Ley aplicable (GDPR, ISO, locales)", "descripcion": "Cómo o por qué aplica y de qué manera ayuda la solución." }
   ],
   "preguntasDescubrimiento": [
-    "Pregunta 1",
-    "Pregunta 2",
-    "Pregunta 3"
+    "Pregunta consultiva 1 al CIO/CISO",
+    "Pregunta consultiva 2",
+    "Pregunta consultiva 3"
   ],
   "arquitecturaSugerida": [
-    "Componente o producto 1",
-    "Componente o producto 2",
-    "Componente o producto 3"
+    "Componente A", "Componente B", "Servicio C"
   ],
+  "objeciones": [
+    { "objecion": "Objeción común técnica, de coste o fricción 1", "respuesta": "Refutación usando características de la solución" },
+    { "objecion": "Otra objeción común", "respuesta": "Refutación sólida" },
+    { "objecion": "Otra duda ejecutiva", "respuesta": "Refutación de TCO o riesgo" }
+  ],
+  "herramientas": {
+    "email": {
+      "asunto": "Asunto llamativo y personalizado",
+      "cuerpo": "Cuerpo persuasivo del correo con saltos de línea \\n para buscar la reunión."
+    },
+    "resumenCISO": {
+      "titulo": "Resumen Ejecutivo para C-Level",
+      "vinetas": ["Viñeta ejecutiva 1", "Viñeta ejecutiva 2", "Viñeta ejecutiva 3"]
+    },
+    "osint": {
+      "titularNoticia": "Titular de una brecha reciente real en su sector",
+      "pitchUrgencia": "Argumento de impacto o urgencia para la reunión"
+    }
+  },
+  "impactoAntesDespues": {
+    "antes": ["Deficiencia perimetral 1", "Visibilidad ciega 2", "Gestión manual 3"],
+    "despues": ["Control persistente 1", "Cumplimiento normativo 2", "Automatización 3"]
+  },
   "fuentes": [
-    "Dominio o fuente pública 1",
-    "Dominio o fuente pública 2"
+    "Dominio público 1", "Dominio 2"
   ]
-}`;
+}
+`;
 
     const payload = {
       contents: [{ parts: [{ text: `Investiga la empresa ${companyName} y genera un perfil comercial y técnico para vender ${solution} de ${manufacturer}.` }] }],
