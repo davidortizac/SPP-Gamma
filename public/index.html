@@ -1,471 +1,594 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gamma Portfolio Explorer</title>
-    <link rel="icon" type="image/png" href="/imagenes/GammaGris.png">
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Chart.js para visualización de riesgos -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gamma Portfolio Explorer</title>
+  <link rel="icon" type="image/png" href="/imagenes/GammaGris.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gamma: {
+              black:   '#1a1a1a',
+              charcoal:'#2d2d2d',
+              red:     '#c8102e',
+              'red-dark':'#9d0b22',
+              gray:    '#6b7280',
+              light:   '#f5f5f5',
+            }
+          },
+          fontFamily: { sans: ['Inter','sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --gamma-red: #c8102e;
+      --gamma-red-dark: #9d0b22;
+      --gamma-black: #1a1a1a;
+    }
 
-    <!-- html2pdf.js para exportación real a PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    /* === SCROLLBAR === */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f5f5f5; }
+    ::-webkit-scrollbar-thumb { background: #c8102e; border-radius: 3px; }
 
-    <style>
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 400px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        @media (min-width: 768px) {
-            .chart-container { height: 350px; }
-        }
-        
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f8fafc; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    /* === LOADER === */
+    .loader {
+      border: 3px solid #f0f0f0;
+      border-top: 3px solid var(--gamma-red);
+      border-radius: 50%;
+      width: 38px; height: 38px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .pulse-text { animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
 
-        /* Colores corporativos multimarca */
-        .gamma-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%); }
-        
-        .loader {
-            border: 4px solid #f1f5f9;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .pulse-text { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: .6; }
-        }
-        
-        .modal-transition { transition: opacity 0.3s ease-in-out; }
+    /* === TABS === */
+    .tab-btn { transition: all 0.15s ease; }
+    .tab-btn.active {
+      background: white;
+      color: var(--gamma-red) !important;
+      font-weight: 700;
+      border-bottom: 3px solid var(--gamma-red);
+    }
 
-        /* Estilos de Pestañas */
-        .tab-btn.active {
-            background-color: white;
-            color: #1e40af;
-            font-weight: 800;
-            border-bottom: 3px solid #3b82f6;
-        }
-        .tab-btn { transition: all 0.15s; }
+    /* === SECTION HEADERS === */
+    .section-head {
+      background: var(--gamma-black);
+      color: white;
+    }
+    .section-head.red { background: var(--gamma-red); }
+    .section-head.light { background: #f5f5f5; color: var(--gamma-black); border-bottom: 1px solid #e0e0e0; }
 
-        /* Modal overlay */
-        #modalOverlay {
-            background: rgba(15, 23, 42, 0.55);
-            backdrop-filter: blur(2px);
-        }
+    /* === TOKEN BADGE === */
+    .token-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(200,16,46,0.08);
+      border: 1px solid rgba(200,16,46,0.2);
+      color: var(--gamma-red);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 2px;
+      letter-spacing: 0.02em;
+    }
+    .token-badge.cached {
+      background: rgba(16,185,129,0.08);
+      border-color: rgba(16,185,129,0.2);
+      color: #059669;
+    }
 
-        /* Estilos específicos para Impresión nativa de respaldo / html2pdf */
-        @media print {
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            nav, header, footer, .no-print, #modalOverlay { display: none !important; }
-            body { background: white !important; }
-            main { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
-            section { page-break-inside: avoid; break-inside: avoid; margin-bottom: 20px; box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
-            .chart-container { max-height: 250px !important; }
-        }
-    </style>
+    /* === ACCORDION === */
+    .accordion-content { transition: max-height 0.3s ease, opacity 0.3s ease; }
+
+    /* === MULTI SELECTION === */
+    .selection-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gamma-black);
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 2px;
+    }
+    .selection-tag button {
+      background: none; border: none; color: rgba(255,255,255,0.6);
+      cursor: pointer; font-size: 14px; line-height: 1;
+      transition: color 0.15s;
+    }
+    .selection-tag button:hover { color: #fff; }
+
+    /* === HISTORY ROW === */
+    .history-row:hover { background: #fafafa; }
+
+    /* === CARD === */
+    .gamma-card {
+      background: white;
+      border-radius: 2px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    /* === NAV === */
+    .gamma-nav {
+      background: var(--gamma-black);
+      border-bottom: 3px solid var(--gamma-red);
+    }
+    .red-accent { color: var(--gamma-red); }
+
+    /* === PRINT === */
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; }
+      nav, header, .no-print { display: none !important; }
+      body { background: white !important; }
+      main { padding: 0 !important; max-width: 100% !important; }
+    }
+
+    /* === MODAL === */
+    #modalOverlay { background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+<body class="bg-gray-50 font-sans antialiased min-h-screen text-gray-900">
 
-    <!-- Navegación Superior -->
-    <nav class="gamma-gradient text-white shadow-lg sticky top-0 z-50 border-b border-blue-500/30 no-print">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row md:items-center justify-between py-3 gap-3">
-                <div class="flex items-center gap-3">
-                    <img src="/imagenes/Logo-Gamma-Ingenieros-(Negro).png" alt="Gamma Logo" class="h-6 object-contain filter invert brightness-0">
-                    <span class="text-sm font-medium text-slate-300 hidden md:block border-l border-slate-600 pl-3">Portfolio Explorer</span>
-                </div>
-                <!-- API Key Input -->
-                <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-md border border-slate-600/50">
-                    <span class="text-xs font-bold text-slate-300" title="Usa tu llave para entorno local">🔑 API Key (Opcional):</span>
-                    <input type="password" id="apiKeyInput" autocomplete="off" spellcheck="false"
-                        class="text-xs bg-white/10 border border-slate-500/30 text-white placeholder-slate-400 rounded px-2 py-1 w-48 focus:outline-none focus:ring-1 focus:ring-blue-400" 
-                        placeholder="Pega tu API Key de Gemini">
-                </div>
-            </div>
-            <!-- Tab navigation -->
-            <div class="flex flex-wrap gap-1 border-t border-white/10 pt-1">
-                <button id="tabAnalysis" class="tab-btn active px-5 py-2.5 text-sm text-white/80 hover:text-white" onclick="switchTab('analysis')">
-                    Análisis de cuenta
-                </button>
-                <button id="tabCatalog" class="tab-btn px-5 py-2.5 text-sm text-white/80 hover:text-white" onclick="switchTab('catalog')">
-                    Gestión de portafolio
-                </button>
-            </div>
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║                   NAVBAR                            ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<nav class="gamma-nav text-white sticky top-0 z-50 no-print">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between h-14">
+      <!-- Logo -->
+      <div class="flex items-center gap-3">
+        <img src="/imagenes/Logo-Gamma-Ingenieros-(Negro).png"
+             alt="Gamma" class="h-7 object-contain filter invert brightness-0"
+             onerror="this.style.display='none'">
+        <span class="text-xs font-semibold text-gray-400 border-l border-gray-700 pl-3 hidden sm:block">
+          Portfolio Explorer
+        </span>
+        <span class="text-xs font-bold text-gamma-red border border-red-900/40 px-2 py-0.5 rounded-sm" style="color:#c8102e; border-color:rgba(200,16,46,0.3)">v1.1</span>
+      </div>
+
+      <!-- User info + stats -->
+      <div class="flex items-center gap-3">
+        <div id="tokenSummary" class="hidden sm:flex items-center gap-2">
+          <div class="token-badge" id="navTokenBadge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 100-16 8 8 0 000 16zm1-8h3l-4 4.5V13H9l4-4.5V12z"/></svg>
+            <span id="navTokenCount">0 tokens</span>
+          </div>
         </div>
-    </nav>
-
-    <!-- ═══════════════════════════════════════════════════════ TAB: ANÁLISIS -->
-    <div id="tab-analysis">
-        <!-- Cabecera de Búsqueda -->
-        <header class="bg-white shadow-sm border-b border-slate-200 py-6 relative z-10 no-print">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Evaluación y Estrategia Comercial</h1>
-                <p class="text-slate-600 mb-6">Selecciona la marca y cuenta. La IA analizará la empresa (vía Google Search) y estructurará una estrategia alineada al portafolio.</p>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fabricante</label>
-                        <select id="manufacturerSelect" class="w-full rounded-md border-slate-300 shadow-sm border p-2.5 focus:ring-2 focus:ring-blue-500 font-medium text-slate-800 bg-slate-50"></select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Solución</label>
-                        <select id="solutionSelect" class="w-full rounded-md border-slate-300 shadow-sm border p-2.5 focus:ring-2 focus:ring-blue-500 font-medium text-slate-800 bg-slate-50"></select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Empresa Objetivo</label>
-                        <input type="text" id="companyInput" placeholder="Ej: Siemens, Banco Bilbao..." class="w-full rounded-md border-slate-300 shadow-sm border p-2.5 focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">País / Región (Opcional)</label>
-                        <input type="text" id="countryInput" placeholder="Ej: España, Latam" class="w-full rounded-md border-slate-300 shadow-sm border p-2.5 focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
-
-                <div class="flex flex-col md:flex-row gap-4 items-start">
-                    <div class="flex-1 w-full">
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Notas / Contexto Extra (Opcional)</label>
-                        <textarea id="notesInput" rows="2" class="w-full rounded-md border-slate-300 shadow-sm border p-2 focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Ej: Priorizar entorno nube, quejas de DLP perimetral actual..."></textarea>
-                    </div>
-                    <div class="flex gap-2 w-full md:w-auto md:mt-6">
-                        <button id="generateBtn" onclick="handleGenerate()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-md shadow transition-colors flex items-center justify-center gap-2">
-                            <span id="btnText">Generar Análisis</span>
-                            <span id="btnIcon">🔍</span>
-                        </button>
-                        <button id="demoBtn" onclick="loadDemo()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-4 rounded-md shadow transition-colors flex items-center justify-center" title="Cargar perfil de ejemplo local">
-                            Demo
-                        </button>
-                    </div>
-                </div>
-                <p id="statusText" class="text-xs text-slate-500 mt-2 font-medium"></p>
-            </div>
-        </header>
-
-        <!-- Pantalla de Carga -->
-        <div id="loadingOverlay" class="hidden flex-col items-center justify-center py-24 no-print">
-            <div class="loader mb-4"></div>
-            <h3 class="text-xl font-bold text-slate-800 mb-2">Analizando empresa y estructurando pitch...</h3>
-            <p class="text-slate-500 text-sm pulse-text text-center max-w-md">Evaluando riesgos asociados a la marca, cumplimiento normativo y construyendo estrategia de presentación.</p>
+        <div class="flex items-center gap-2">
+          <div id="userAvatar" class="w-7 h-7 rounded-full bg-red-700 flex items-center justify-center text-xs font-bold overflow-hidden"></div>
+          <span id="userName" class="text-sm font-medium text-gray-300 hidden sm:block"></span>
+          <form action="/auth/logout" method="POST">
+            <button type="submit"
+              class="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-3 py-1 rounded-sm transition-all">
+              Salir
+            </button>
+          </form>
         </div>
-
-        <!-- Contenedor Principal de Resultados -->
-        <main id="reportContainer" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 hidden space-y-8 relative z-0">
-            
-            <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-md shadow-sm">
-                <div class="flex items-start md:items-center justify-between flex-col md:flex-row gap-4">
-                    <div>
-                        <h2 class="text-lg font-bold text-green-800 mb-1 flex items-center gap-2"><svg class="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Análisis Completado</h2>
-                        <p class="text-sm text-green-900">Estrategia enfocada en <strong id="displaySolutionIntro" class="text-green-950"></strong> para la organización <strong id="displayCompanyNameIntro"></strong>.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Grid Superior: Perfilamiento y Riesgo Operativo -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-2">
-                
-                <!-- 1. Perfilamiento Corporativo -->
-                <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-100 border-b border-slate-200 px-6 py-4">
-                        <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <svg class="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg> 1. Visión Ejecutiva
-                        </h3>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <div>
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Organización Auditada</span>
-                            <p id="outEmpresa" class="text-lg font-semibold text-blue-700"></p>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Sector Industrial</span>
-                                <p id="outSector" class="font-medium text-slate-800 text-sm mt-1"></p>
-                            </div>
-                            <div>
-                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Rol Decisor Clave</span>
-                                <p id="outRol" class="font-medium text-slate-800 text-sm mt-1"></p>
-                            </div>
-                        </div>
-                        <div>
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Contexto Estratégico</span>
-                            <p id="outCore" class="text-slate-600 mt-1 text-sm"></p>
-                        </div>
-                        <div>
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Resumen Ejecutivo / Riesgo Crítico</span>
-                            <p id="outImpacto" class="text-slate-700 font-medium italic mt-1 text-sm"></p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 2. Arquitectura / Pitch Principal -->
-                <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                    <div class="bg-slate-100 border-b border-slate-200 px-6 py-4">
-                        <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <svg class="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg> 2. Propuesta Tecnológica
-                        </h3>
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col space-y-5">
-                        <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                            <h4 class="font-bold text-blue-800 mb-2 flex items-center gap-2 text-sm uppercase tracking-wider">
-                                Valor de <span id="outFabricante">La Marca</span>
-                            </h4>
-                            <p id="outPitchValor" class="text-sm text-blue-900 leading-relaxed"></p>
-                        </div>
-                        
-                        <div>
-                            <h4 class="font-bold text-slate-800 mb-2 text-sm uppercase tracking-wider">Arquitectura Sugerida</h4>
-                            <ul id="outArquitecturaList" class="space-y-1"></ul>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- 3. Vectores de Riesgo -->
-            <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="bg-slate-100 border-b border-slate-200 px-6 py-4">
-                    <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg> 3. Análisis de Riesgo & Exposición
-                    </h3>
-                </div>
-                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    <div>
-                        <h4 class="font-bold text-slate-800 mb-3 text-lg">Distribución de vulnerabilidad</h4>
-                        <p class="text-slate-600 mb-4 text-sm">Escenarios de exposición asociados a los activos críticos de la empresa.</p>
-                        
-                        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-md mt-4">
-                            <h5 class="font-bold text-amber-800 text-sm mb-1">Riesgo Residual:</h5>
-                            <p id="outRiesgoResidual" class="text-amber-900 text-sm"></p>
-                        </div>
-                        
-                        <div class="mt-4">
-                            <h5 class="font-bold text-slate-800 text-sm mb-1">Activos Críticos:</h5>
-                            <div id="outActivosCriticos" class="flex flex-wrap gap-2 mt-2"></div>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="dataRiskChart"></canvas>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Grid Inferior: Normativo y Conversación -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                
-                <!-- 4. Puntos de Conversación -->
-                <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                    <div class="gamma-gradient px-6 py-4 text-white">
-                        <h3 class="text-xl font-bold flex items-center gap-2">
-                            <svg class="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg> 4. Consultoría y Descubrimiento
-                        </h3>
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col">
-                        <p class="text-sm text-slate-500 mb-4">Preguntas de apertura consultiva y rompehielos:</p>
-                        <div class="bg-slate-800 rounded-lg p-4 mb-4 shadow-inner">
-                            <p id="outRompehielo" class="text-slate-200 italic font-medium text-sm"></p>
-                        </div>
-                        <ul id="outPreguntasList" class="space-y-3 mt-2"></ul>
-                    </div>
-                </section>
-
-                <!-- 5. Marco Normativo -->
-                <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-100 border-b border-slate-200 px-6 py-4">
-                        <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <svg class="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg> 5. Cumplimiento Normativo
-                        </h3>
-                    </div>
-                    <div class="p-6">
-                        <p class="text-sm text-slate-600 mb-4">Justificación de la inversión basada en los controles exigidos en su industria:</p>
-                        <ul id="normasList" class="space-y-4"></ul>
-                    </div>
-                </section>
-            </div>
-
-            <!-- 6. Casos de Uso -->
-            <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="bg-slate-100 border-b border-slate-200 px-6 py-4">
-                    <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg> 6. Alineación de Casos de Uso
-                    </h3>
-                </div>
-                <div class="p-6">
-                    <p class="text-sm text-slate-600 mb-6">Expande para ver cómo posicionar las capacidades de la solución frente a los dolores del modelo de negocio.</p>
-                    <div id="casosContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Generado dinámicamente -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- 7. Manejo de Objeciones -->
-            <section class="bg-indigo-50 rounded-xl shadow-sm border border-indigo-200 overflow-hidden">
-                <div class="bg-indigo-100 border-b border-indigo-200 px-6 py-4">
-                    <h3 class="text-xl font-bold text-indigo-900 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg> 7. Manejo de Objeciones
-                    </h3>
-                </div>
-                <div class="p-6">
-                    <p class="text-sm text-indigo-700 mb-6">Argumentos preparados para rebatir las principales dudas de costo, arquitectura o fricción operativa.</p>
-                    <div id="objecionesContainer" class="space-y-6">
-                        <!-- Generado dinámicamente -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- 8. Resumen C-Level -->
-            <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="bg-slate-100 border-b border-slate-200 px-6 py-4">
-                    <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> 8. Resumen para CISO / CIO
-                    </h3>
-                </div>
-                <div class="p-6">
-                    <h4 id="outResumenTitulo" class="font-bold text-lg text-slate-800 mb-4"></h4>
-                    <ul id="outResumenList" class="space-y-3"></ul>
-                </div>
-            </section>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- 9. Email Ciberseguridad -->
-                <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-100 border-b border-slate-200 px-6 py-4">
-                        <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <svg class="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg> 9. Borrador de Email
-                        </h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="bg-slate-50 p-4 rounded-md border border-slate-200">
-                            <span class="text-xs font-bold text-slate-400 uppercase">Asunto Sugerido:</span>
-                            <div id="outEmailAsunto" class="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2 mt-1 mb-4"></div>
-                            <p id="outEmailCuerpo" class="text-sm text-slate-700 whitespace-pre-wrap font-sans leading-relaxed"></p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 10. Amenazas OSINT -->
-                <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-100 border-b border-slate-200 px-6 py-4">
-                        <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <svg class="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> 10. Contexto OSINT & Competencias
-                        </h3>
-                    </div>
-                    <div class="p-6 space-y-6">
-                        <div class="bg-rose-50 p-4 rounded-md border border-rose-200">
-                            <span class="text-xs font-bold text-rose-400 uppercase">Noticia / Incidente en el Sector:</span>
-                            <div id="outOsintTitular" class="text-lg font-bold text-rose-700 border-b border-rose-200 pb-2 mt-1 mb-2"></div>
-                            <a id="outOsintUrl" href="#" target="_blank" class="text-xs text-blue-600 hover:underline break-all mb-4 block hidden font-medium"></a>
-                            <span class="font-bold text-slate-800 text-sm">Táctica de urgencia:</span>
-                            <p id="outOsintPitch" class="text-sm text-slate-700 italic mt-1"></p>
-                        </div>
-                        <div>
-                            <span class="text-xs font-bold text-slate-400 uppercase">Diferenciadores Técnicos:</span>
-                            <ul id="outCompetenciasList" class="mt-2 space-y-2"></ul>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- 11. Comparativa Antes y Después -->
-            <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="bg-slate-800 px-6 py-4 text-white">
-                    <h3 class="text-xl font-bold flex items-center gap-2">
-                        <svg class="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> 11. El Valor del Cambio Estratégico
-                    </h3>
-                </div>
-                <div class="p-0 sm:p-6 bg-slate-50">
-                    <div class="flex flex-col md:flex-row shadow-lg rounded-xl overflow-hidden border border-slate-200">
-                        <div class="flex-1 bg-white p-6 border-b md:border-b-0 md:border-r border-slate-200 relative">
-                            <div class="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
-                            <h4 class="text-lg font-black text-slate-800 mb-4 flex items-center gap-2">
-                                <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> ESTADO ACTUAL / ESTÁNDAR
-                            </h4>
-                            <ul id="antesList" class="space-y-3"></ul>
-                        </div>
-                        <div class="flex-1 bg-slate-900 p-6 relative">
-                            <div class="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
-                            <h4 class="text-lg font-black text-white mb-4 flex items-center gap-2">
-                                <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ESTADO DESEADO (Arquitectura Sugerida)
-                            </h4>
-                            <ul id="despuesList" class="space-y-3"></ul>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Botón Exportar al final de la página -->
-            <div class="flex justify-center mt-12 mb-4 no-print">
-                <button onclick="exportToPDF()" id="downloadPdfBtn" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 px-8 rounded-lg shadow-xl transition-all transform hover:scale-105 flex items-center gap-3 text-lg">
-                    <span class="text-2xl">📥</span> Guardar / Descargar PDF
-                </button>
-            </div>
-
-        </main>
+      </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════ TAB: CATÁLOGO -->
-    <div id="tab-catalog" class="hidden">
-        <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <div>
-                    <h2 class="text-2xl font-black text-slate-900">Gestión de Catálogo y Portafolio</h2>
-                    <p class="text-slate-500 text-sm mt-1">Los cambios se guardan automáticamente en tu servidor y aplican en el módulo de Consultoría.</p>
-                </div>
-                <button onclick="openMfModal()" class="shrink-0 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 flex items-center gap-2 shadow-md">
-                    <span class="text-lg">+</span> Nuevo Fabricante
-                </button>
-            </div>
-
-            <p id="catalogStatusMsg" class="hidden text-sm font-medium px-4 py-2 rounded-lg"></p>
-
-            <div id="catalogList" class="space-y-4">
-                <div class="text-slate-400 text-sm py-10 text-center">Cargando portafolio...</div>
-            </div>
-        </main>
+    <!-- TABS -->
+    <div class="flex border-t border-gray-800">
+      <button id="tabAnalysis" class="tab-btn active px-5 py-2 text-sm text-gray-400 hover:text-white" onclick="switchTab('analysis')">
+        Análisis de cuenta
+      </button>
+      <button id="tabHistory" class="tab-btn px-5 py-2 text-sm text-gray-400 hover:text-white" onclick="switchTab('history')">
+        Historial
+      </button>
+      <button id="tabCatalog" class="tab-btn px-5 py-2 text-sm text-gray-400 hover:text-white" onclick="switchTab('catalog')">
+        Portafolio
+      </button>
     </div>
+  </div>
+</nav>
 
-    <!-- ═══════════════════════════════════════════════════════ MODAL CRUD -->
-    <div id="modalOverlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto transform transition-all">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-                <h3 id="modalTitle" class="text-lg font-black text-slate-900"></h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">&times;</button>
-            </div>
-            <div class="p-6 space-y-4" id="modalBody"></div>
-            <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50 rounded-b-2xl">
-                <button onclick="closeModal()" class="rounded-md border border-slate-300 px-5 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 bg-white">Cancelar</button>
-                <button id="modalConfirmBtn" class="rounded-md bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 text-sm shadow-sm">Guardar</button>
-            </div>
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║              TAB: ANÁLISIS                          ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div id="tab-analysis">
+  <!-- Search Header -->
+  <header class="bg-white border-b border-gray-200 py-6 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+      <div class="flex items-start justify-between mb-5 gap-4">
+        <div>
+          <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Evaluación y Estrategia Comercial</h1>
+          <p class="text-sm text-gray-500 mt-1">Selecciona marcas, empresa y país. La IA analizará la cuenta (vía Google Search) y construirá la estrategia.</p>
         </div>
+        <div id="lastTokenInfo" class="hidden flex-col items-end gap-1"></div>
+      </div>
+
+      <!-- Row 1: Empresa + País -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Empresa Objetivo *</label>
+          <input type="text" id="companyInput"
+            placeholder="Ej: Bancolombia, Ecopetrol, ISA..."
+            class="w-full border border-gray-300 bg-gray-50 rounded-sm px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">País / Región</label>
+          <input type="text" id="countryInput"
+            placeholder="Ej: Colombia, México, Latam"
+            class="w-full border border-gray-300 bg-gray-50 rounded-sm px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition">
+        </div>
+      </div>
+
+      <!-- Row 2: Multi-brand selector -->
+      <div class="mb-4">
+        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Selección de Portafolio (puedes agregar varias marcas)</label>
+        <div class="flex flex-wrap gap-2 items-center">
+          <select id="manufacturerSelect"
+            class="border border-gray-300 bg-gray-50 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-600 min-w-40">
+          </select>
+          <select id="solutionSelect"
+            class="border border-gray-300 bg-gray-50 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-600 min-w-40">
+          </select>
+          <button onclick="addSelection()"
+            class="bg-gray-900 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-sm transition-colors flex items-center gap-1">
+            <span class="text-lg leading-none">+</span> Agregar
+          </button>
+        </div>
+        <!-- Tags de selecciones activas -->
+        <div id="selectionTags" class="flex flex-wrap gap-2 mt-3"></div>
+        <p id="selectionHint" class="text-xs text-gray-400 mt-1">Agrega al menos una marca para generar el análisis.</p>
+      </div>
+
+      <!-- Row 3: Notas + Botones -->
+      <div class="flex flex-col md:flex-row gap-4 items-start">
+        <div class="flex-1 w-full">
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Notas / Contexto Extra</label>
+          <textarea id="notesInput" rows="2"
+            class="w-full border border-gray-300 bg-gray-50 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-600"
+            placeholder="Ej: Priorizar nube, quejas con DLP perimetral actual..."></textarea>
+        </div>
+        <div class="flex gap-2 md:mt-5">
+          <button id="generateBtn" onclick="handleGenerate(false)"
+            class="flex-1 md:flex-none bg-red-700 hover:bg-red-800 text-white font-bold py-2.5 px-6 rounded-sm shadow transition-all flex items-center gap-2 text-sm">
+            <span id="btnText">Generar Análisis</span>
+            <span id="btnIcon">🔍</span>
+          </button>
+          <button onclick="handleGenerate(true)"
+            title="Ignorar caché y generar de nuevo"
+            class="bg-gray-800 hover:bg-gray-700 text-white font-semibold py-2.5 px-3 rounded-sm text-sm transition-all" >
+            ↺
+          </button>
+          <button onclick="loadDemo()"
+            class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2.5 px-4 rounded-sm text-sm transition-all">
+            Demo
+          </button>
+        </div>
+      </div>
+      <p id="statusText" class="text-xs text-gray-400 mt-2"></p>
+    </div>
+  </header>
+
+  <!-- Loading -->
+  <div id="loadingOverlay" class="hidden flex-col items-center justify-center py-24 no-print">
+    <div class="loader mb-4"></div>
+    <h3 class="text-lg font-bold text-gray-800 mb-1">Analizando empresa y construyendo estrategia...</h3>
+    <p class="text-gray-500 text-sm pulse-text text-center max-w-md">Consultando Google Search, evaluando riesgos y normativa del sector.</p>
+  </div>
+
+  <!-- Resultado -->
+  <main id="reportContainer" class="max-w-7xl mx-auto px-4 sm:px-6 py-8 hidden space-y-6 relative z-0">
+
+    <!-- Banner análisis completado -->
+    <div class="border-l-4 border-red-700 bg-white px-5 py-4 rounded-sm shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <p class="text-xs font-bold text-red-700 uppercase tracking-wider mb-1">Análisis completado</p>
+        <p class="text-sm text-gray-700">Estrategia para <strong id="displayCompanyNameIntro"></strong> — <span id="displaySolutionIntro" class="text-gray-500"></span></p>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <div id="tokenDisplay" class="token-badge"></div>
+        <div id="cacheDisplay" class="hidden token-badge cached">⚡ Desde caché</div>
+      </div>
     </div>
 
-    <!-- TOAST NOTIFICATION UI -->
-    <div id="toastNotification" class="fixed bottom-5 right-5 bg-slate-800 text-white px-6 py-4 rounded-lg shadow-2xl transform transition-all duration-300 translate-y-32 opacity-0 z-50 flex items-center gap-3 no-print">
-        <span id="toastIcon" class="text-xl">ℹ️</span>
-        <span id="toastMessage" class="font-medium">Mensaje</span>
+    <!-- Grid 1: Visión + Propuesta -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- 1. Visión Ejecutiva -->
+      <div class="gamma-card">
+        <div class="section-head light px-5 py-3">
+          <h2 class="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+            <span style="color:var(--gamma-red)">01</span> Visión Ejecutiva
+          </h2>
+        </div>
+        <div class="p-5 space-y-4">
+          <div>
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Organización</span>
+            <p id="outEmpresa" class="text-lg font-bold mt-0.5" style="color:var(--gamma-red)"></p>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Sector</span>
+              <p id="outSector" class="font-semibold text-gray-800 text-sm mt-0.5"></p>
+            </div>
+            <div>
+              <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Rol Decisor</span>
+              <p id="outRol" class="font-semibold text-gray-800 text-sm mt-0.5"></p>
+            </div>
+          </div>
+          <div>
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Contexto Estratégico</span>
+            <p id="outCore" class="text-gray-600 mt-0.5 text-sm"></p>
+          </div>
+          <div class="bg-gray-50 border border-gray-100 p-3 rounded-sm">
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Resumen Ejecutivo</span>
+            <p id="outImpacto" class="text-gray-700 font-medium italic mt-1 text-sm"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Propuesta Tecnológica -->
+      <div class="gamma-card flex flex-col">
+        <div class="section-head px-5 py-3">
+          <h2 class="font-bold text-sm uppercase tracking-wider text-white flex items-center gap-2">
+            <span style="color:#c8102e">02</span> Propuesta Tecnológica
+          </h2>
+        </div>
+        <div class="p-5 flex-1 flex flex-col space-y-4">
+          <div class="bg-red-50 border border-red-100 rounded-sm p-4">
+            <h4 class="font-bold text-xs text-red-800 uppercase tracking-wider mb-2">
+              Valor de <span id="outFabricante">la Marca</span>
+            </h4>
+            <p id="outPitchValor" class="text-sm text-red-900 leading-relaxed"></p>
+          </div>
+          <div>
+            <h4 class="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2">Arquitectura Sugerida</h4>
+            <ul id="outArquitecturaList" class="space-y-1"></ul>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <script src="/catalog.js"></script>
-    <script src="/app.js"></script>
-    <script src="/catalog-editor.js"></script>
+    <!-- 3. Análisis de Riesgo -->
+    <div class="gamma-card">
+      <div class="section-head light px-5 py-3">
+        <h2 class="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+          <span style="color:var(--gamma-red)">03</span> Análisis de Riesgo &amp; Exposición
+        </h2>
+      </div>
+      <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div>
+          <h4 class="font-bold text-gray-800 text-base mb-2">Distribución de vulnerabilidad</h4>
+          <p class="text-gray-500 text-sm mb-4">Escenarios de exposición de los activos críticos de la empresa.</p>
+          <div class="border-l-4 border-yellow-500 bg-yellow-50 p-3 rounded-sm">
+            <h5 class="font-bold text-yellow-800 text-xs uppercase mb-1">Riesgo Residual</h5>
+            <p id="outRiesgoResidual" class="text-yellow-900 text-sm"></p>
+          </div>
+          <div class="mt-4">
+            <h5 class="font-bold text-gray-600 text-xs uppercase tracking-wider mb-2">Activos Críticos</h5>
+            <div id="outActivosCriticos" class="flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+        <div style="position:relative;height:280px;max-width:320px;margin:auto;">
+          <canvas id="dataRiskChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid 2: Consultoría + Normativo -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- 4. Consultoría -->
+      <div class="gamma-card flex flex-col">
+        <div class="section-head red px-5 py-3">
+          <h2 class="font-bold text-sm uppercase tracking-wider text-white flex items-center gap-2">
+            <span>04</span> Consultoría y Descubrimiento
+          </h2>
+        </div>
+        <div class="p-5 flex-1 flex flex-col">
+          <div class="bg-gray-900 rounded-sm p-4 mb-4">
+            <p id="outRompehielo" class="text-gray-200 italic text-sm font-medium"></p>
+          </div>
+          <ul id="outPreguntasList" class="space-y-3"></ul>
+        </div>
+      </div>
+      <!-- 5. Normativo -->
+      <div class="gamma-card">
+        <div class="section-head light px-5 py-3">
+          <h2 class="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+            <span style="color:var(--gamma-red)">05</span> Cumplimiento Normativo
+          </h2>
+        </div>
+        <div class="p-5">
+          <ul id="normasList" class="space-y-3"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Casos de Uso -->
+    <div class="gamma-card">
+      <div class="section-head light px-5 py-3">
+        <h2 class="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+          <span style="color:var(--gamma-red)">06</span> Alineación de Casos de Uso
+        </h2>
+      </div>
+      <div class="p-5">
+        <div id="casosContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+    </div>
+
+    <!-- 7. Objeciones -->
+    <div class="gamma-card" style="border-color:#e0e7ff">
+      <div class="px-5 py-3" style="background:#eef2ff; border-bottom:1px solid #e0e7ff">
+        <h2 class="font-bold text-sm uppercase tracking-wider flex items-center gap-2 text-indigo-900">
+          <span style="color:var(--gamma-red)">07</span> Manejo de Objeciones
+        </h2>
+      </div>
+      <div class="p-5">
+        <div id="objecionesContainer" class="space-y-4"></div>
+      </div>
+    </div>
+
+    <!-- 8. Resumen C-Level -->
+    <div class="gamma-card">
+      <div class="section-head light px-5 py-3">
+        <h2 class="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+          <span style="color:var(--gamma-red)">08</span> Resumen para CISO / CIO
+        </h2>
+      </div>
+      <div class="p-5">
+        <h4 id="outResumenTitulo" class="font-bold text-base text-gray-800 mb-3"></h4>
+        <ul id="outResumenList" class="space-y-2"></ul>
+      </div>
+    </div>
+
+    <!-- Grid 3: Email + OSINT -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="gamma-card">
+        <div class="section-head light px-5 py-3">
+          <h2 class="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+            <span style="color:var(--gamma-red)">09</span> Borrador de Email
+          </h2>
+        </div>
+        <div class="p-5">
+          <div class="bg-gray-50 border border-gray-200 p-4 rounded-sm">
+            <span class="text-xs font-bold text-gray-400 uppercase">Asunto:</span>
+            <div id="outEmailAsunto" class="font-bold text-gray-900 border-b border-gray-200 pb-2 mt-1 mb-3"></div>
+            <p id="outEmailCuerpo" class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed"></p>
+          </div>
+        </div>
+      </div>
+      <div class="gamma-card">
+        <div class="section-head light px-5 py-3">
+          <h2 class="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+            <span style="color:var(--gamma-red)">10</span> Contexto OSINT &amp; Diferenciadores
+          </h2>
+        </div>
+        <div class="p-5 space-y-4">
+          <div class="bg-red-50 border border-red-100 p-4 rounded-sm">
+            <span class="text-xs font-bold text-red-400 uppercase">Incidente en el Sector:</span>
+            <div id="outOsintTitular" class="font-bold text-red-800 mt-1 mb-2 text-sm"></div>
+            <a id="outOsintUrl" href="#" target="_blank" class="text-xs text-blue-600 hover:underline mb-3 block hidden font-medium">Ver fuente →</a>
+            <p id="outOsintPitch" class="text-sm text-gray-700 italic"></p>
+          </div>
+          <div>
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Diferenciadores</span>
+            <ul id="outCompetenciasList" class="mt-2 space-y-1"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11. Antes / Después -->
+    <div class="gamma-card">
+      <div class="section-head px-5 py-3">
+        <h2 class="font-bold text-sm uppercase tracking-wider text-white flex items-center gap-2">
+          <span style="color:#c8102e">11</span> El Valor del Cambio Estratégico
+        </h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2">
+        <div class="bg-white p-6 border-b md:border-b-0 md:border-r border-gray-200 relative">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-red-600"></div>
+          <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
+            <span class="text-red-500">✕</span> Estado Actual
+          </h4>
+          <ul id="antesList" class="space-y-2"></ul>
+        </div>
+        <div class="bg-gray-900 p-6 relative">
+          <div class="absolute top-0 left-0 right-0 h-1" style="background:var(--gamma-red)"></div>
+          <h4 class="font-bold text-white mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
+            <span class="text-green-400">✓</span> Estado con Gamma
+          </h4>
+          <ul id="despuesList" class="space-y-2"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF export -->
+    <div class="flex justify-center mt-8 mb-4 no-print">
+      <button onclick="exportToPDF()" id="downloadPdfBtn"
+        class="bg-gray-900 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-sm shadow-lg transition-all flex items-center gap-3">
+        <span>📥</span> Descargar PDF
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║              TAB: HISTORIAL                         ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div id="tab-history" class="hidden">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-xl font-extrabold text-gray-900">Historial de Consultas</h2>
+        <p class="text-sm text-gray-500 mt-1">Reutiliza análisis anteriores sin volver a consumir tokens.</p>
+      </div>
+      <div id="statsBar" class="hidden flex items-center gap-4"></div>
+    </div>
+    <div id="historyContainer" class="gamma-card overflow-hidden">
+      <div class="p-8 text-center text-gray-400">Cargando historial...</div>
+    </div>
+  </main>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║              TAB: PORTAFOLIO                        ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div id="tab-catalog" class="hidden">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-5">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-sm border border-gray-200 shadow-sm">
+      <div>
+        <h2 class="text-xl font-extrabold text-gray-900">Gestión de Portafolio</h2>
+        <p class="text-sm text-gray-500 mt-1">Los cambios se guardan automáticamente.</p>
+      </div>
+      <button onclick="openMfModal()"
+        class="shrink-0 bg-red-700 hover:bg-red-800 text-white font-bold px-5 py-2 rounded-sm flex items-center gap-2 shadow text-sm transition-colors">
+        <span class="text-lg leading-none">+</span> Nuevo Fabricante
+      </button>
+    </div>
+    <p id="catalogStatusMsg" class="hidden text-sm font-medium px-4 py-2 rounded-sm"></p>
+    <div id="catalogList" class="space-y-4">
+      <div class="text-gray-400 text-sm py-10 text-center">Cargando portafolio...</div>
+    </div>
+  </main>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║              MODAL CRUD                             ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div id="modalOverlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+  <div class="bg-white rounded-sm shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <h3 id="modalTitle" class="text-base font-bold text-gray-900"></h3>
+      <button onclick="closeModal()" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+    </div>
+    <div class="p-6 space-y-4" id="modalBody"></div>
+    <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
+      <button onclick="closeModal()" class="border border-gray-300 px-5 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 bg-white rounded-sm">Cancelar</button>
+      <button id="modalConfirmBtn" class="bg-red-700 hover:bg-red-800 text-white font-bold px-6 py-2 text-sm shadow-sm rounded-sm">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toastNotification" class="fixed bottom-5 right-5 px-5 py-3 rounded-sm shadow-2xl transform transition-all duration-300 translate-y-32 opacity-0 z-50 flex items-center gap-3 no-print" style="background:#1a1a1a; color:white">
+  <span id="toastIcon">ℹ️</span>
+  <span id="toastMessage" class="font-medium text-sm">Mensaje</span>
+</div>
+
+<script src="/catalog.js"></script>
+<script src="/app.js"></script>
+<script src="/catalog-editor.js"></script>
+<script src="/history.js"></script>
 </body>
 </html>

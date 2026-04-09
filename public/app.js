@@ -1,62 +1,80 @@
+// ══════════════════════════════════════════════════════
+//  app.js  ·  SPP-Gamma v1.1
+// ══════════════════════════════════════════════════════
 let currentChart = null;
-let appConfig = { hasServerKey: false, defaultModel: 'Gemini 3.1 Flash Lite' };
+let appConfig    = { hasServerKey: false, defaultModel: 'gemini-2.0-flash' };
 
-const state = {
-  report: null,
-  manufacturers: []
-};
+// Selecciones multi-brand [{ manufacturer, solution }]
+let activeSelections = [];
 
-function $(id) {
-  return document.getElementById(id);
-}
+const state = { report: null, manufacturers: [] };
 
-// ─── Utilidades Generales ──────────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+
+// ── Tab switching ────────────────────────────────────────────────────────
 function switchTab(tab) {
-  const isAnalysis = tab === 'analysis';
-  $('tab-analysis').classList.toggle('hidden', !isAnalysis);
-  $('tab-catalog').classList.toggle('hidden', isAnalysis);
-  $('tabAnalysis').classList.toggle('active', isAnalysis);
-  $('tabCatalog').classList.toggle('active', !isAnalysis);
-  if (!isAnalysis) renderCatalogEditor();
+  ['analysis','history','catalog'].forEach(t => {
+    $(`tab-${t}`)?.classList.toggle('hidden', t !== tab);
+    $(`tab${t.charAt(0).toUpperCase()+t.slice(1)}`)?.classList.toggle('active', t === tab);
+  });
+  if (tab === 'history')  loadHistory();
+  if (tab === 'catalog')  renderCatalogEditor();
 }
 
+// ── Toast ────────────────────────────────────────────────────────────────
 function showToast(message, type = 'info') {
-  const toast = document.getElementById('toastNotification');
-  document.getElementById('toastMessage').textContent = message;
-  if (!toast) return;
-
-  document.getElementById('toastIcon').textContent = type === 'error' ? '❌' : (type === 'success' ? '✅' : 'ℹ️');
-
-  // Reset classes
-  toast.className = "fixed bottom-5 right-5 px-6 py-4 rounded-lg shadow-2xl transform transition-all duration-300 z-50 flex items-center gap-3 no-print";
-
-  if (type === 'error') toast.classList.add('bg-red-600', 'text-white');
-  else if (type === 'success') toast.classList.add('bg-green-600', 'text-white');
-  else toast.classList.add('bg-slate-800', 'text-white');
-
-  toast.classList.remove('translate-y-32', 'opacity-0');
-  setTimeout(() => {
-    toast.classList.add('translate-y-32', 'opacity-0');
-  }, 4000);
+  const toast = $('toastNotification');
+  $('toastMessage').textContent = message;
+  $('toastIcon').textContent = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+  toast.style.background = type === 'error' ? '#9d0b22' : type === 'success' ? '#065f46' : '#1a1a1a';
+  toast.classList.remove('translate-y-32','opacity-0');
+  setTimeout(() => toast.classList.add('translate-y-32','opacity-0'), 4000);
 }
 
+// ── Accordion ────────────────────────────────────────────────────────────
 function toggleAccordion(contentId, arrowId) {
-  const content = document.getElementById(contentId);
-  const arrow = document.getElementById(arrowId);
-  if (content.classList.contains('hidden')) {
-    content.classList.remove('hidden');
-    arrow.style.transform = 'rotate(180deg)';
-  } else {
-    content.classList.add('hidden');
-    arrow.style.transform = 'rotate(0deg)';
-  }
+  const content = $(contentId), arrow = $(arrowId);
+  const hidden = content.classList.contains('hidden');
+  content.classList.toggle('hidden', !hidden);
+  if (arrow) arrow.style.transform = hidden ? 'rotate(180deg)' : 'rotate(0)';
 }
 
-// ─── Inicialización y Carga de Catálogo ────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────────────────────
 async function init() {
-  await Promise.all([loadConfig(), loadCatalogFromAPI()]);
+  await Promise.all([loadConfig(), loadCatalogFromAPI(), loadUserInfo()]);
   loadManufacturers();
   bindEvents();
+}
+
+async function loadUserInfo() {
+  try {
+    const r = await fetch('/api/me');
+    if (!r.ok) return;
+    const u = await r.json();
+    const avatarEl = $('userAvatar');
+    const nameEl   = $('userName');
+    if (u.picture) {
+      avatarEl.innerHTML = `<img src="${u.picture}" class="w-full h-full object-cover">`;
+    } else {
+      avatarEl.textContent = (u.name || u.email || 'G')[0].toUpperCase();
+    }
+    if (nameEl) nameEl.textContent = u.name || u.email;
+    // Token stats
+    loadTokenStats();
+  } catch {}
+}
+
+async function loadTokenStats() {
+  try {
+    const r = await fetch('/api/stats');
+    if (!r.ok) return;
+    const s = await r.json();
+    const el = $('navTokenBadge');
+    if (el && s.total_tokens > 0) {
+      $('navTokenCount').textContent = `${s.total_tokens.toLocaleString()} tokens`;
+      $('tokenSummary')?.classList.remove('hidden');
+    }
+  } catch {}
 }
 
 async function loadConfig() {
@@ -64,10 +82,10 @@ async function loadConfig() {
     const res = await fetch('/api/config');
     appConfig = await res.json();
     $('statusText').textContent = appConfig.hasServerKey
-      ? `Servidor listo. Modelo: ${appConfig.defaultModel}.`
-      : 'No hay GEMINI_API_KEY en servidor. Usa el campo superior.';
-  } catch (_e) {
-    $('statusText').textContent = 'Error leyendo la configuración del servidor.';
+      ? `Listo · Modelo: ${appConfig.defaultModel}`
+      : '⚠ Sin API Key en servidor.';
+  } catch {
+    $('statusText').textContent = 'Error leyendo configuración.';
   }
 }
 
@@ -76,235 +94,233 @@ async function loadCatalogFromAPI() {
     const res = await fetch('/api/catalog');
     const data = await res.json();
     state.manufacturers = data.manufacturers || [];
-  } catch (_e) {
-    state.manufacturers = [];
-  }
+  } catch { state.manufacturers = []; }
 }
 
 function loadManufacturers() {
-  const select = $('manufacturerSelect');
-  select.innerHTML = state.manufacturers
-    .map((m, i) => `<option value="${m.name}" ${i === 0 ? 'selected' : ''}>${m.name}</option>`)
+  const sel = $('manufacturerSelect');
+  sel.innerHTML = state.manufacturers
+    .map((m,i) => `<option value="${m.name}" ${i===0?'selected':''}>${m.name}</option>`)
     .join('');
   updateSolutions();
 }
 
 function updateSolutions() {
-  const manufacturer = getSelectedManufacturer();
-  const solutionSelect = $('solutionSelect');
-  const solutions = manufacturer?.solutions || [];
-  solutionSelect.innerHTML = solutions
-    .map((s, i) => `<option value="${s.name}" ${i === 0 ? 'selected' : ''}>${s.name}</option>`)
+  const mf = getSelectedManufacturer();
+  $('solutionSelect').innerHTML = (mf?.solutions || [])
+    .map((s,i) => `<option value="${s.name}" ${i===0?'selected':''}>${s.name}</option>`)
     .join('');
 }
 
 function getSelectedManufacturer() {
-  const name = $('manufacturerSelect').value;
-  return state.manufacturers.find((m) => m.name === name);
+  return state.manufacturers.find(m => m.name === $('manufacturerSelect').value);
 }
 
 function bindEvents() {
   $('manufacturerSelect').addEventListener('change', updateSolutions);
-  $('companyInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleGenerate();
-  });
+  $('companyInput').addEventListener('keypress', e => { if (e.key === 'Enter') handleGenerate(false); });
 }
 
-function showLoading(isLoading) {
-  const btn = $('generateBtn');
-  const loadUI = $('loadingOverlay');
-  const currentStatus = $('statusText');
-  const reportContainer = $('reportContainer');
-
-  if (isLoading) {
-    btn.disabled = true;
-    btn.classList.add('opacity-50', 'cursor-not-allowed');
-    loadUI.classList.remove('hidden');
-    loadUI.classList.add('flex');
-    reportContainer.classList.add('hidden');
-    currentStatus.textContent = 'Analizando...';
-  } else {
-    btn.disabled = false;
-    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-    loadUI.classList.add('hidden');
-    loadUI.classList.remove('flex');
-  }
+// ── Multi-brand selection ─────────────────────────────────────────────────
+function addSelection() {
+  const mf  = $('manufacturerSelect').value;
+  const sol = $('solutionSelect').value;
+  if (!mf || !sol) return;
+  const exists = activeSelections.some(s => s.manufacturer === mf && s.solution === sol);
+  if (exists) { showToast('Esa combinación ya está agregada.', 'error'); return; }
+  activeSelections.push({ manufacturer: mf, solution: sol });
+  renderSelectionTags();
 }
 
-// ─── Generación de Análisis ─────────────────────────────────────────────────
-async function handleGenerate() {
+function removeSelection(idx) {
+  activeSelections.splice(idx, 1);
+  renderSelectionTags();
+}
+
+function renderSelectionTags() {
+  const wrap = $('selectionTags');
+  const hint = $('selectionHint');
+  wrap.innerHTML = activeSelections.map((s, i) => `
+    <span class="selection-tag">
+      <span>${s.manufacturer} · ${s.solution}</span>
+      <button onclick="removeSelection(${i})" title="Quitar">×</button>
+    </span>
+  `).join('');
+  hint.textContent = activeSelections.length === 0
+    ? 'Agrega al menos una marca para generar el análisis.'
+    : `${activeSelections.length} selección(es) activa(s).`;
+}
+
+// ── Generate ──────────────────────────────────────────────────────────────
+async function handleGenerate(forceNew = false) {
   const companyName = $('companyInput').value.trim();
-  const manufacturer = $('manufacturerSelect').value;
-  const solution = $('solutionSelect').value;
-  const country = $('countryInput').value.trim();
-  const notes = $('notesInput').value.trim();
-  const apiKey = $('apiKeyInput').value.trim();
+  const country     = $('countryInput').value.trim();
+  const notes       = $('notesInput').value.trim();
 
-  if (!companyName) {
-    showToast('Debes indicar la empresa objetivo.', 'error');
-    $('companyInput').focus();
-    return;
-  }
-
-  if (!appConfig.hasServerKey && !apiKey) {
-    showToast('Pega una API key de Gemini en la esquina superior derecha.', 'error');
-    return;
-  }
+  if (!companyName) { showToast('Indica la empresa objetivo.', 'error'); $('companyInput').focus(); return; }
+  if (activeSelections.length === 0) { showToast('Agrega al menos una marca.', 'error'); return; }
 
   showLoading(true);
-
   try {
     const response = await fetch('/api/generate-profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ companyName, manufacturer, solution, country, notes, apiKey })
+      body: JSON.stringify({
+        companyName,
+        selections: activeSelections,
+        country, notes,
+        forceNew
+      })
     });
-
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Fallo en IA');
-
+    if (!response.ok) throw new Error(data.error || 'Error en IA');
     state.report = data;
     renderReport(data);
-    showToast('Análisis generado exitosamente', 'success');
-  } catch (error) {
-    showToast(error.message || 'Error inesperado generando perfil', 'error');
+    showToast('Análisis generado ✓', 'success');
+    loadTokenStats();
+  } catch (err) {
+    showToast(err.message || 'Error inesperado', 'error');
   } finally {
     showLoading(false);
   }
 }
 
+function showLoading(isLoading) {
+  const btn = $('generateBtn');
+  const loadUI = $('loadingOverlay');
+  const report = $('reportContainer');
+  if (isLoading) {
+    btn.disabled = true;
+    btn.classList.add('opacity-50','cursor-not-allowed');
+    loadUI.classList.remove('hidden'); loadUI.classList.add('flex');
+    report.classList.add('hidden');
+  } else {
+    btn.disabled = false;
+    btn.classList.remove('opacity-50','cursor-not-allowed');
+    loadUI.classList.add('hidden'); loadUI.classList.remove('flex');
+  }
+}
+
+// ── Render Report ─────────────────────────────────────────────────────────
 function renderReport(data) {
   $('reportContainer').classList.remove('hidden');
-  $('statusText').textContent = 'Análisis completado';
 
-  // Headers
-  $('displaySolutionIntro').textContent = `${data.fabricante} - ${data.solucion}`;
+  // Token display
+  const tok = data._tokens || {};
+  const tokenEl = $('tokenDisplay');
+  if (tok.total) {
+    tokenEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 100-16 8 8 0 000 16zm1-8h3l-4 4.5V13H9l4-4.5V12z"/></svg> ${tok.total.toLocaleString()} tokens (↑${tok.input||0} / ↓${tok.output||0})`;
+    tokenEl.className = 'token-badge';
+  }
+  const cacheEl = $('cacheDisplay');
+  if (data._cached) cacheEl.classList.remove('hidden');
+  else cacheEl.classList.add('hidden');
+
+  $('displaySolutionIntro').textContent = data.fabricante ? `${data.fabricante} · ${data.solucion}` : '';
   $('displayCompanyNameIntro').textContent = data.empresa;
 
-  // 1. Visión Ejecutiva
-  $('outEmpresa').textContent = data.empresa || '-';
-  $('outSector').textContent = data.perfilamiento?.sector || '-';
-  $('outRol').textContent = data.perfilamiento?.rol || '-';
-  $('outCore').textContent = data.perfilamiento?.core || '-';
-  $('outImpacto').textContent = data.resumenEjecutivo || '-';
-
-  // 2. Propuesta / Pitch
+  $('outEmpresa').textContent    = data.empresa || '-';
+  $('outSector').textContent     = data.perfilamiento?.sector || '-';
+  $('outRol').textContent        = data.perfilamiento?.rol || '-';
+  $('outCore').textContent       = data.perfilamiento?.core || '-';
+  $('outImpacto').textContent    = data.resumenEjecutivo || '-';
   $('outFabricante').textContent = data.fabricante || '-';
   $('outPitchValor').textContent = data.pitch?.valor || '-';
-  renderSimpleList('outArquitecturaList', data.arquitecturaSugerida, '<li class="text-sm text-slate-700 flex items-center gap-2"><div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>{TEXT}</li>');
 
-  // 3. Riesgos
+  renderList('outArquitecturaList', data.arquitecturaSugerida,
+    '<li class="text-sm text-gray-700 flex items-center gap-2"><span style="color:#c8102e;font-size:10px">▶</span>{TEXT}</li>');
+
   $('outRiesgoResidual').textContent = data.riesgos?.impacto || '-';
-  $('outActivosCriticos').innerHTML = (data.perfilamiento?.activosCriticos || []).map(a =>
-    `<span class="bg-white border border-slate-200 shadow-sm px-3 py-1 text-xs text-slate-700 rounded-full">${a}</span>`
-  ).join('');
+  $('outActivosCriticos').innerHTML = (data.perfilamiento?.activosCriticos||[])
+    .map(a => `<span class="bg-white border border-gray-200 px-3 py-1 text-xs text-gray-700 rounded-sm shadow-sm">${a}</span>`)
+    .join('');
   renderChart(data.riesgos?.tiposDatos || []);
 
-  // 4. Preguntas
   $('outRompehielo').textContent = data.contextoEstrategico?.rompehielo || data.pitch?.apertura || '-';
-  renderSimpleList('outPreguntasList', data.preguntasDescubrimiento, '<li class="flex items-start gap-2 text-sm text-slate-700"><span class="text-blue-500 font-bold">»</span><span>{TEXT}</span></li>');
+  renderList('outPreguntasList', data.preguntasDescubrimiento,
+    '<li class="flex items-start gap-2 text-sm text-gray-700"><span style="color:#c8102e;font-weight:700">›</span><span>{TEXT}</span></li>');
 
-  // 5. Normativo
-  const normasList = $('normasList');
-  normasList.innerHTML = (data.normativo || []).map(n => `
-        <li class="bg-slate-50 border border-slate-200 p-4 rounded-md">
-            <h5 class="font-bold text-slate-800 text-sm mb-1">${n.norma || '-'}</h5>
-            <p class="text-sm text-slate-600">${n.descripcion || '-'}</p>
-        </li>
-    `).join('');
+  $('normasList').innerHTML = (data.normativo||[]).map(n => `
+    <li class="bg-gray-50 border border-gray-100 p-3 rounded-sm">
+      <h5 class="font-bold text-gray-800 text-sm mb-1">${n.norma||'-'}</h5>
+      <p class="text-sm text-gray-600">${n.descripcion||'-'}</p>
+    </li>`).join('');
 
-  // 6. Casos Uso
-  const casosCont = $('casosContainer');
-  casosCont.innerHTML = (data.casosDeUso || []).map((c, idx) => `
-        <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-            <button onclick="toggleAccordion('cu-cont-${idx}', 'cu-arr-${idx}')" class="w-full text-left px-5 py-4 bg-slate-50 hover:bg-slate-100 flex justify-between items-center transition-colors">
-                <span class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                    <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">${idx + 1}</span>
-                    ${c.titulo}
-                </span>
-                <span id="cu-arr-${idx}" class="text-slate-400 transition-transform">▼</span>
-            </button>
-            <div id="cu-cont-${idx}" class="p-5 border-t border-slate-200 hidden space-y-3 bg-white">
-                <div><span class="text-xs font-bold text-slate-400 uppercase">Dolor Operativo:</span><p class="text-sm text-slate-700 mt-1">${c.dolor}</p></div>
-                <div><span class="text-xs font-bold text-slate-400 uppercase">Propuesta ${data.fabricante}:</span><p class="text-sm text-slate-700 mt-1">${c.solucion}</p></div>
-                <div class="bg-blue-50 p-3 rounded text-sm text-blue-800 border border-blue-100"><span class="font-bold">Resultado:</span> ${c.resultado}</div>
-            </div>
-        </div>
-    `).join('');
+  $('casosContainer').innerHTML = (data.casosDeUso||[]).map((c,idx) => `
+    <div class="bg-white border border-gray-200 rounded-sm overflow-hidden shadow-sm">
+      <button onclick="toggleAccordion('cu-${idx}','cu-arr-${idx}')"
+        class="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 flex justify-between items-center transition-colors">
+        <span class="font-bold text-gray-800 text-sm flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white" style="background:#c8102e">${idx+1}</span>
+          ${c.titulo}
+        </span>
+        <span id="cu-arr-${idx}" class="text-gray-400 transition-transform text-xs">▼</span>
+      </button>
+      <div id="cu-${idx}" class="p-4 border-t border-gray-100 hidden space-y-2">
+        <div><span class="text-xs font-bold text-gray-400 uppercase">Dolor:</span><p class="text-sm text-gray-700 mt-0.5">${c.dolor}</p></div>
+        <div><span class="text-xs font-bold text-gray-400 uppercase">Solución:</span><p class="text-sm text-gray-700 mt-0.5">${c.solucion}</p></div>
+        <div class="bg-red-50 p-2 rounded-sm text-sm text-red-900 border border-red-100"><strong>Resultado:</strong> ${c.resultado}</div>
+      </div>
+    </div>`).join('');
 
-  // 7. Objeciones
-  const objCont = $('objecionesContainer');
-  objCont.innerHTML = (data.objeciones || []).map((o, idx) => `
-        <div class="bg-white rounded-lg border border-indigo-100 p-4 shadow-sm relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-            <p class="font-bold text-indigo-900 text-sm flex items-start gap-2">
-                <span class="text-indigo-400">❓</span> ${o.objecion}
-            </p>
-            <p class="text-sm text-slate-700 mt-2 pl-6 border-t border-indigo-50 pt-2 border-dashed">
-                <span class="font-bold text-green-600">💡 Respuesta:</span> ${o.respuesta}
-            </p>
-        </div>
-    `).join('');
+  $('objecionesContainer').innerHTML = (data.objeciones||[]).map(o => `
+    <div class="bg-white rounded-sm border border-indigo-100 p-4 shadow-sm relative overflow-hidden">
+      <div class="absolute top-0 left-0 w-1 h-full" style="background:#c8102e"></div>
+      <p class="font-bold text-indigo-900 text-sm flex items-start gap-2 pl-2">
+        <span class="text-gray-400">❓</span>${o.objecion}
+      </p>
+      <p class="text-sm text-gray-700 mt-2 pl-2 border-t border-dashed border-indigo-50 pt-2">
+        <span class="font-bold text-green-600">💡</span> ${o.respuesta}
+      </p>
+    </div>`).join('');
 
-  // 8. Resumen C-Level
   $('outResumenTitulo').textContent = data.herramientas?.resumenCISO?.titulo || 'Resumen Ejecutivo';
-  renderSimpleList('outResumenList', data.herramientas?.resumenCISO?.vinetas, '<li class="flex items-start gap-2 bg-slate-50 p-2 rounded border border-slate-100"><span class="text-green-500">✔</span><span class="text-sm text-slate-700">{TEXT}</span></li>');
+  renderList('outResumenList', data.herramientas?.resumenCISO?.vinetas,
+    '<li class="flex items-start gap-2 bg-gray-50 p-2 rounded-sm border border-gray-100"><span class="text-green-500">✔</span><span class="text-sm text-gray-700">{TEXT}</span></li>');
 
-  // 9. Email
   $('outEmailAsunto').textContent = data.herramientas?.email?.asunto || '-';
   $('outEmailCuerpo').textContent = data.herramientas?.email?.cuerpo || '-';
-
-  // 10. OSINT
   $('outOsintTitular').textContent = data.herramientas?.osint?.titularNoticia || data.riesgos?.riesgoPrincipal || '-';
 
-  // Mapeo dinamico de URL en UI si existe
-  const osintUrl = data.herramientas?.osint?.urlNoticia;
   const urlEl = $('outOsintUrl');
-  if (osintUrl) {
-    urlEl.textContent = "Ver Fuente / Referencia Mapeada";
-    urlEl.href = osintUrl;
-    urlEl.classList.remove('hidden');
-  } else {
-    urlEl.classList.add('hidden');
-  }
+  const osintUrl = data.herramientas?.osint?.urlNoticia;
+  if (osintUrl) { urlEl.href = osintUrl; urlEl.classList.remove('hidden'); }
+  else urlEl.classList.add('hidden');
 
   $('outOsintPitch').textContent = data.herramientas?.osint?.pitchUrgencia || '-';
-  renderSimpleList('outCompetenciasList', data.competencias, '<li class="text-sm text-slate-700 flex items-center gap-2 w-full"><div class="w-1 h-1 bg-slate-400 rounded-full"></div>{TEXT}</li>');
+  renderList('outCompetenciasList', data.competencias,
+    '<li class="text-sm text-gray-700 flex items-center gap-2"><span style="color:#c8102e;font-size:10px">▶</span>{TEXT}</li>');
 
-  // 11. Antes / Despues
-  renderSimpleList('antesList', data.impactoAntesDespues?.antes, '<li class="flex items-start gap-2 text-sm text-slate-700"><span class="text-red-500 mt-0.5">⊗</span> <span>{TEXT}</span></li>');
-  renderSimpleList('despuesList', data.impactoAntesDespues?.despues, '<li class="flex items-start gap-2 text-sm text-slate-200"><span class="text-blue-400 mt-0.5">✓</span> <span>{TEXT}</span></li>');
+  renderList('antesList', data.impactoAntesDespues?.antes,
+    '<li class="flex items-start gap-2 text-sm text-gray-700"><span class="text-red-500 mt-0.5">⊗</span><span>{TEXT}</span></li>');
+  renderList('despuesList', data.impactoAntesDespues?.despues,
+    '<li class="flex items-start gap-2 text-sm text-gray-200"><span class="text-green-400 mt-0.5">✓</span><span>{TEXT}</span></li>');
 
   window.scrollTo({ top: $('reportContainer').offsetTop - 20, behavior: 'smooth' });
 }
 
-function renderSimpleList(elementId, items = [], template = '<li>{TEXT}</li>') {
-  const el = $(elementId);
-  el.innerHTML = (items || []).map(item => template.replace('{TEXT}', item)).join('');
+function renderList(id, items=[], tpl='<li>{TEXT}</li>') {
+  $(id).innerHTML = (items||[]).map(t => tpl.replace('{TEXT}', t)).join('');
 }
 
 function renderChart(dataObj) {
   const ctx = $('dataRiskChart').getContext('2d');
   if (currentChart) currentChart.destroy();
-
   currentChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: dataObj.map((d) => d.label),
+      labels: dataObj.map(d => d.label),
       datasets: [{
-        data: dataObj.map((d) => d.value),
-        backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#64748b'],
-        borderWidth: 2,
-        borderColor: '#ffffff',
-        hoverOffset: 4
+        data: dataObj.map(d => d.value),
+        backgroundColor: ['#c8102e','#1a1a1a','#6b7280','#e5e7eb'],
+        borderWidth: 2, borderColor: '#fff', hoverOffset: 4
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
-        tooltip: { callbacks: { label: function (context) { return ' ' + context.label + ': ' + context.raw + '%'; } } }
+        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}%` } }
       },
       cutout: '65%'
     }
@@ -312,116 +328,57 @@ function renderChart(dataObj) {
 }
 
 function exportToPDF() {
-  showToast('Generando reporte PDF, espera un momento...', 'info');
-  const element = document.getElementById('reportContainer');
-  const empresaNombre = document.getElementById('outEmpresa').textContent || 'Empresa';
-
-  // Ocultar el botón de exportar del DOM temporalmente
-  const btn = document.getElementById('downloadPdfBtn');
-  if(btn) btn.style.display = 'none';
-
-  // Forzar scroll al inicio para evitar que html2canvas genere hojas en blanco asociadas al Y-offset
-  window.scrollTo(0, 0);
-
-  const opt = {
-    margin:       [10, 10, 15, 10], // top, left, bottom, right
-    filename:     `Gamma_Strategy_${empresaNombre.replace(/\s+/g, '_')}.pdf`,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, logging: false, windowWidth: 1200, scrollY: 0 },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak:    { mode: ['css', 'legacy'], avoid: ['section', '.bg-white'] }
-  };
-
-  html2pdf().set(opt).from(element).save().then(() => {
-    if(btn) btn.style.display = 'flex';
-    showToast('PDF descargado exitosamente', 'success');
-  }).catch(err => {
-    showToast('Error al generar PDF', 'error');
-    console.error(err);
-  });
+  showToast('Generando PDF...', 'info');
+  const btn = $('downloadPdfBtn');
+  if (btn) btn.style.display = 'none';
+  window.scrollTo(0,0);
+  const empresaNombre = $('outEmpresa').textContent || 'Empresa';
+  html2pdf().set({
+    margin: [10,10,15,10],
+    filename: `Gamma_Strategy_${empresaNombre.replace(/\s+/g,'_')}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1200, scrollY: 0 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css','legacy'], avoid: ['section','.gamma-card'] }
+  }).from($('reportContainer')).save().then(() => {
+    if (btn) btn.style.display = 'flex';
+    showToast('PDF descargado ✓', 'success');
+  }).catch(() => showToast('Error al generar PDF', 'error'));
 }
 
+// ── Demo ──────────────────────────────────────────────────────────────────
 function loadDemo() {
-  $('companyInput').value = "Banco Industrial Test";
-  showToast("Mock Data Loaded, use 'Generar' si quieres consultar la IA", "info");
-
+  $('companyInput').value = 'Banco Industrial Test';
+  if (activeSelections.length === 0 && state.manufacturers.length) {
+    const mf = state.manufacturers[0];
+    activeSelections.push({ manufacturer: mf.name, solution: mf.solutions[0]?.name || 'Demo' });
+    renderSelectionTags();
+  }
   const mockData = {
-    "empresa": "Banco Industrial Test",
-    "fabricante": getSelectedManufacturer()?.name || "Palo Alto Networks",
-    "solucion": $('solutionSelect').value || "Prisma SD-WAN",
-    "resumenEjecutivo": "Transformación de infraestructura perimetral hacia redes escalables con enfoque Zero Trust.",
-    "perfilamiento": {
-      "sector": "Sector Financiero y Banca",
-      "geografia": "Latinoamérica Central",
-      "core": "Intermediación financiera, banca digital y corporativa.",
-      "rol": "CIO / CTO de Infraestructura IT",
-      "activosCriticos": ["Portal Core Bancario", "Conexión de Sucursales", "Datos PCI"]
+    empresa:'Banco Industrial Test', fabricante:'Palo Alto Networks', solucion:'Prisma SD-WAN',
+    resumenEjecutivo:'Transformación perimetral hacia redes escalables con Zero Trust.',
+    perfilamiento:{ sector:'Banca', geografia:'Latinoamérica', core:'Intermediación financiera y banca digital', rol:'CIO/CTO de Infraestructura', activosCriticos:['Core Bancario','Sucursales','Datos PCI'] },
+    riesgos:{ tiposDatos:[{label:'Canal Digital',value:40},{label:'Sucursales',value:35},{label:'PCI',value:25}],
+      riesgoPrincipal:'Indisponibilidad de red transaccional.', impacto:'Interrupción de transacciones y multas SLA.' },
+    contextoEstrategico:{ impacto:'Gestión de routers MPLS insostenible.', rompehielo:'¿Cómo garantizan 100% de resiliencia en sucursales ante caídas de ISP?' },
+    pitch:{ apertura:'Vi su expansión en agencias digitales.', valor:'SD-WAN reduce OPEX de MPLS e inyecta seguridad ML en cada rama.', cierre:'Propongo un piloto no invasivo en 2 oficinas.' },
+    casosDeUso:[{ titulo:'Reemplazo de MPLS Obsoleto', dolor:'Contratos MPLS costosos y difíciles de escalar.', solucion:'Migrar a banda ancha con SD-WAN seguro.', resultado:'Reducción OPEX 40% y mejora de latencias al cloud.' }],
+    competencias:['SD-WAN nativo basado en ML.','Gestión unificada desde Panorama.'],
+    normativo:[{ norma:'PCI-DSS', descripcion:'Cifrado obligatorio en conexiones con transacciones.' }],
+    preguntasDescubrimiento:['¿Cuáles son los cuellos de botella hacia la nube?','¿Políticas de VPN centralizadas o locales?'],
+    arquitecturaSugerida:['Dispositivos SD-WAN tipo ION','Orquestación en nube','NGFW siguiente generación'],
+    objeciones:[{ objecion:'Es caro migrar 100 sitios.', respuesta:'Modelo de convivencia y despliegue por grupos críticos.' }],
+    herramientas:{
+      email:{ asunto:'Optimización Segura de Red de Sucursales', cuerpo:'Hola [Nombre],\n\nHe visto la apertura de nuevas agencias digitales...' },
+      resumenCISO:{ titulo:'Modernización de Conectividad con IA', vinetas:['Reducción de caídas de ISP','Ahorro sobre líneas dedicadas'] },
+      osint:{ titularNoticia:'Entidad bancaria fuera de servicio 8h por falla de capa 2', pitchUrgencia:'Evitar desconexión con enlaces L7 redundantes.' }
     },
-    "riesgos": {
-      "tiposDatos": [
-        { "label": "Canal Digital", "value": 40 },
-        { "label": "Conexión Sucursales", "value": 35 },
-        { "label": "Datos PCI", "value": 25 }
-      ],
-      "riesgoPrincipal": "Indisponibilidad en la red transaccional por enlaces caídos.",
-      "impacto": "Interrupción de transacciones, afectación en ATMs y multas por SLA nulos."
+    impactoAntesDespues:{
+      antes:['Costos MPLS elevados','Fallas por enlace único','Actualización router a router manual'],
+      despues:['Agilidad cloud-first','Active-Active resiliencia','Zero Touch Provisioning']
     },
-    "contextoEstrategico": {
-      "impacto": "La gestión individual de routers MPLS es insostenible.",
-      "rompehielo": "¿Cómo están garantizando resiliencia 100% de la red de sucursales ante caídas de ISP?"
-    },
-    "pitch": {
-      "apertura": "He visto la expansión en las nuevas agencias digitales.",
-      "valor": "Con la solución de SD-WAN podemos reducir el OPEX de MPLS e inyectar seguridad ML en cada rama.",
-      "cierre": "Evaluemos un piloto no invasivo de SD-WAN en 2 oficinas."
-    },
-    "casosDeUso": [
-      {
-        "titulo": "Reemplazo de MPLS Obsoleto",
-        "dolor": "Contratos costosos de MPLS, dificultad de escalar.",
-        "solucion": "Migrar a conexiones de banda ancha usando SD-WAN seguro.",
-        "resultado": "Bajar OPEX un 40% mejorando latencias al Cloud Core."
-      }
-    ],
-    "competencias": [
-      "Capacidad de SD-WAN nativo basado en Machine Learning.",
-      "Gestión desde Panorama unificada."
-    ],
-    "normativo": [
-      { "norma": "Cumplimiento PCI-DSS", "descripcion": "Cifrado requerido en cualquier conexión externa que lleve transacciones." }
-    ],
-    "preguntasDescubrimiento": [
-      "¿Cuáles son los cuellos de botella actuales hacia la nube pública?",
-      "¿Manejan las políticas de VPN localmente o de manera centralizada?"
-    ],
-    "arquitecturaSugerida": [
-      "Dispositivos SD-WAN tipo ION",
-      "Orquestación en la nube",
-      "Firewall de siguiente generación"
-    ],
-    "objeciones": [
-      { "objecion": "Es muy caro migrar 100 sitios de golpe.", "respuesta": "Se plantea un modelo de convivencia y despliegue por grupos críticos primero." }
-    ],
-    "herramientas": {
-      "email": {
-        "asunto": "Optimización Segura de Red de Sucursales - Banca Test",
-        "cuerpo": "Hola [Nombre],\n\nHe estado investigando la apertura de agencias de Banca Test y..."
-      },
-      "resumenCISO": {
-        "titulo": "Modernización de Conectividad con Telemetría e IA",
-        "vinetas": ["Reducción de caídas de ISP", "Ahorro sobre líneas dedicadas"]
-      },
-      "osint": {
-        "titularNoticia": "Entidad bancaria detiene operaciones por 8h debido a falla de capa 2",
-        "pitchUrgencia": "Buscamos evitar el escenario de desconexión mediante enlaces redundantes L7 automatizados."
-      }
-    },
-    "impactoAntesDespues": {
-      "antes": ["Costos MPLS altos", "Fallas por enlace único", "Actualización router a router manual"],
-      "despues": ["Agilidad Cloud Opex", "Active-Active resiliencia", "Zero Touch Provisioning Cero Contacto"]
-    }
+    _tokens:{ input:1200, output:850, total:2050 }, _cached:false
   };
-
   state.report = mockData;
   renderReport(mockData);
 }

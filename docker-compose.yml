@@ -4,7 +4,7 @@ services:
     build: .
     container_name: gamma-portfolio-explorer
     ports:
-      - "3080:3000"
+      - "3000:3000"
     environment:
       PORT: 3000
       GEMINI_MODEL: gemini-2.5-flash

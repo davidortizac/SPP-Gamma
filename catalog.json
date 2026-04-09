@@ -260,7 +260,21 @@
     {
       "name": "Dynatrace",
       "description": "Servicios de observabilidad de aplicaciones de negocio",
-      "solutions": []
+      "solutions": [
+        {
+          "name": "Bussiness Observability",
+          "products": [
+            "Observabilidad de negocio"
+          ],
+          "value": [
+            "Decisiones en tiempo-real.",
+            "Contexto TI automático.",
+            "Optimización de procesos.",
+            "Sostenibilidad y ahorro.",
+            "Datos unificados Grail (Datalake House)."
+          ]
+        }
+      ]
     },
     {
       "name": "Netskope",

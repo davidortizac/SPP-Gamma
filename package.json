@@ -1,12 +1,20 @@
 {
-  "name": "multibrand-sales-app",
-  "version": "1.0.0",
-  "description": "Aplicacion multimarca de portafolio para preventa de ciberseguridad",
+  "name": "spp-gamma",
+  "version": "1.1.0",
+  "description": "Gamma Portfolio Explorer - Sales Pitch Pro con OAuth, historial y multi-marca",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^9.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-local": "^1.0.0"
   }
 }
