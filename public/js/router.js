@@ -27,7 +27,7 @@ const routes = [
   { path: '/',            exact: true,  handler: () => navigate('/dashboard') },
   { path: '/login',       exact: true,  handler: () => renderLogin() },
   { path: '/dashboard',   exact: true,  handler: () => renderDashboard(),                        requiresAuth: true },
-  { path: '/queries/new', exact: true,  handler: async () => { const m = await getQueries();     m.renderQueryNew(); },              requiresAuth: true, permission: 'queries' },
+  { path: '/queries/new', exact: true,  handler: async (p, q) => { const m = await getQueries();     m.renderQueryNew(q); },              requiresAuth: true, permission: 'queries' },
   { path: '/queries',     exact: true,  handler: async () => { const m = await getQueries();     m.renderQueryList(); },             requiresAuth: true, permission: 'queries' },
   { path: '/queries',     exact: false, handler: async (p) => { const m = await getQueryDetail(); m.renderQueryDetail(p.split('/')[2]); }, requiresAuth: true, permission: 'queries' },
   { path: '/macro/new',   exact: true,  handler: async () => { const m = await getMacro();       m.renderMacroNew(); },              requiresAuth: true, permission: 'macro' },
@@ -121,7 +121,7 @@ async function handleRoute() {
 
   // Match de ruta
   let matched = routes.find(r => r.exact && r.path === path);
-  if (!matched) matched = routes.find(r => !r.exact && path.startsWith(r.path + '/'));
+  if (!matched) matched = routes.find(r => !r.exact && (path === r.path || path.startsWith(r.path + '/')));
 
   if (!matched) {
     navigate(authState.isLoggedIn() ? '/dashboard' : '/login');
@@ -140,8 +140,10 @@ async function handleRoute() {
     return;
   }
 
+  const queryParams = new URLSearchParams(hash.split('?')[1] || '');
+
   updateSidebar(path);
-  await matched.handler(path);
+  await matched.handler(path, queryParams);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

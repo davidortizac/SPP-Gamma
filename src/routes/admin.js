@@ -66,7 +66,7 @@ router.put('/users/:id', async (req, res) => {
        WHERE id = $7
        RETURNING id, name, email, role, active, permissions, updated_at`,
       [name?.trim(), email?.toLowerCase().trim(), role,
-       active !== undefined ? active : null, hash, permsValue, req.params.id]
+       active === undefined ? null : active, hash, permsValue, req.params.id]
     );
     if (!result.rows[0]) return res.status(404).json({ error: 'Usuario no encontrado.' });
     res.json(result.rows[0]);
@@ -84,7 +84,7 @@ router.delete('/users/:id', async (req, res) => {
     await query('UPDATE users SET active = false, updated_at = NOW() WHERE id = $1', [req.params.id]);
     res.json({ message: 'Usuario desactivado.' });
   } catch (err) {
-    res.status(500).json({ error: 'Error desactivando usuario.' });
+    res.status(500).json({ error: 'Error desactivando usuario.', details: err.message });
   }
 });
 
@@ -101,12 +101,15 @@ router.get('/config', async (_req, res) => {
     config.gemini_key_masked  = activeKey
       ? `${'•'.repeat(Math.max(0, activeKey.length - 4))}${activeKey.slice(-4)}`
       : '';
-    config.gemini_key_source  = dbKey ? 'db' : (envKey ? 'env' : 'none');
+    let source = 'none';
+    if (dbKey) source = 'db';
+    else if (envKey) source = 'env';
+    config.gemini_key_source = source;
     delete config.gemini_api_key; // no enviar la key real al frontend
     config.server_model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     res.json(config);
   } catch (err) {
-    res.status(500).json({ error: 'Error leyendo configuración.' });
+    res.status(500).json({ error: 'Error leyendo configuración.', details: err.message });
   }
 });
 
@@ -137,7 +140,7 @@ router.get('/db/stats', async (_req, res) => {
     const counts = {};
     for (const table of tables) {
       const r = await query(`SELECT COUNT(*) FROM ${table}`);
-      counts[table] = parseInt(r.rows[0].count);
+      counts[table] = Number.parseInt(r.rows[0].count, 10);
     }
 
     // Tamaño de BD
@@ -181,6 +184,31 @@ router.get('/db/backup', async (_req, res) => {
     res.json(backup);
   } catch (err) {
     res.status(500).json({ error: 'Error generando backup.', details: err.message });
+  }
+});
+
+// ── Historial Global de Consultas ──────────────────────────────────────────────
+router.get('/queries', async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT q.id, q.company_name, q.manufacturer, q.solution, q.created_at, u.name as user_name 
+       FROM queries q 
+       JOIN users u ON q.user_id = u.id 
+       ORDER BY q.created_at DESC`
+    );
+    res.json({ queries: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Error listando consultas globales.', details: err.message });
+  }
+});
+
+router.delete('/queries/:id', async (req, res) => {
+  try {
+    const result = await query('DELETE FROM queries WHERE id = $1 RETURNING id', [req.params.id]);
+    if (!result.rows[0]) return res.status(404).json({ error: 'Consulta no encontrada.' });
+    res.json({ message: 'Consulta eliminada.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error eliminando consulta.', details: err.message });
   }
 });
 

@@ -15,6 +15,7 @@ export async function renderQueryDetail(id) {
           <h1 id="detail-title">Cargando análisis...</h1>
         </div>
         <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary" onclick="navigate('/queries/new?cloneId=${id}')">↺ Regenerar / Clonar</button>
           <button class="btn btn-secondary" onclick="exportPDF()" id="pdf-btn">📥 Descargar PDF</button>
         </div>
       </div>
@@ -33,6 +34,49 @@ export async function renderQueryDetail(id) {
   chatHistory = Array.isArray(queryData.chat_history) ? queryData.chat_history : [];
 
   const r = queryData.result_json || {};
+
+  let emailHtml = '';
+  if (r.herramientas && r.herramientas.email) {
+    const em = r.herramientas.email;
+    emailHtml = `
+      <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;min-width:0;">
+        <p style="font-weight:700;margin-bottom:10px;font-size:14px;">📧 Email de prospección</p>
+        <!-- Email card -->
+        <div style="background:var(--surface-0,#fff);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;font-size:13px;">
+          <!-- Header bar -->
+          <div style="background:var(--bg-surface-alt);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;flex-direction:column;gap:4px;">
+            <div style="display:flex;gap:6px;align-items:baseline;">
+              <span style="color:var(--text-muted);font-size:11px;width:52px;flex-shrink:0;">Asunto</span>
+              <span style="font-weight:600;color:var(--text-primary);word-break:break-word;">${esc(em.asunto)}</span>
+            </div>
+            <div style="display:flex;gap:6px;align-items:baseline;">
+              <span style="color:var(--text-muted);font-size:11px;width:52px;flex-shrink:0;">Para</span>
+              <span style="color:var(--text-secondary);font-style:italic;">[Decisor] · ${esc(r.empresa || '')}</span>
+            </div>
+          </div>
+          <!-- Body rendered -->
+          <div style="padding:16px 20px;line-height:1.8;color:var(--text-primary);word-break:break-word;">
+            ${renderEmailBody(em.cuerpo)}
+          </div>
+          <!-- Copy button -->
+          <div style="border-top:1px solid var(--border);padding:8px 16px;display:flex;justify-content:flex-end;">
+            <button onclick="copyEmailBody(this)" data-body="${esc(em.cuerpo || '')}" class="btn btn-ghost btn-sm" style="font-size:11px;">⎘ Copiar texto</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  let cisoHtml = '';
+  if (r.herramientas && r.herramientas.resumenCISO) {
+    cisoHtml = `
+      <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;min-width:0;">
+        <p style="font-weight:700;margin-bottom:6px;">👔 Resumen C-Level</p>
+        <p style="font-weight:600;">${esc(r.herramientas.resumenCISO.titulo)}</p>
+        <ul style="padding-left:16px;margin-top:6px;color:var(--text-secondary);">
+          ${(r.herramientas.resumenCISO.vinetas || []).map(v => `<li style="word-break:break-word;">${parseMd(v)}</li>`).join('')}
+        </ul>
+      </div>`;
+  }
 
   document.getElementById('detail-body').innerHTML = `
     <div id="report-content" style="display:grid;gap:24px;">
@@ -157,20 +201,8 @@ export async function renderQueryDetail(id) {
       <div class="card">
         <div class="card-header"><h3>Herramientas de venta</h3></div>
         <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13px;">
-          ${r.herramientas.email ? `
-          <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;min-width:0;">
-            <p style="font-weight:700;margin-bottom:6px;">📧 Email de prospección</p>
-            <p><strong>Asunto:</strong> ${esc(r.herramientas.email.asunto)}</p>
-            <pre style="white-space:pre-wrap;font-family:inherit;font-size:12px;color:var(--text-secondary);margin-top:8px;background:var(--bg-surface-alt);padding:10px;border-radius:var(--radius-sm);word-break:break-word;overflow-wrap:anywhere;">${esc(r.herramientas.email.cuerpo)}</pre>
-          </div>` : ''}
-          ${r.herramientas.resumenCISO ? `
-          <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;min-width:0;">
-            <p style="font-weight:700;margin-bottom:6px;">👔 Resumen C-Level</p>
-            <p style="font-weight:600;">${esc(r.herramientas.resumenCISO.titulo)}</p>
-            <ul style="padding-left:16px;margin-top:6px;color:var(--text-secondary);">
-              ${(r.herramientas.resumenCISO.vinetas || []).map(v => `<li style="word-break:break-word;">${parseMd(v)}</li>`).join('')}
-            </ul>
-          </div>` : ''}
+          ${emailHtml}
+          ${cisoHtml}
         </div>
       </div>` : ''}
 
@@ -213,7 +245,8 @@ export async function renderQueryDetail(id) {
               ${(r.fuentes || []).map(f => {
                 const isUrl = /^https?:\/\//.test(f);
                 const display = esc(f);
-                return `<li style="word-break:break-all;">${isUrl ? `<a href="${esc(f)}" target="_blank" rel="noopener" style="color:var(--brand-600);">${display}</a>` : display}</li>`;
+                const inner = isUrl ? '<a href="' + esc(f) + '" target="_blank" rel="noopener" style="color:var(--brand-600);">' + display + '</a>' : display;
+                return '<li style="word-break:break-all;">' + inner + '</li>';
               }).join('')}
             </ol>
           </details>
@@ -270,7 +303,7 @@ export async function renderQueryDetail(id) {
     if (!globalThis.html2pdf) { showToast('html2pdf no disponible', 'error'); return; }
     showToast('Generando PDF...', 'info');
     const el = document.getElementById('report-content');
-    const name = `${queryData.company_name}_${queryData.manufacturer}`.replace(/\s+/g, '_');
+    const name = `${queryData.company_name}_${queryData.manufacturer}`.replaceAll(/\s+/g, '_');
     globalThis.html2pdf().set({
       margin: [10, 10, 15, 10],
       filename: `Gamma_${name}_${new Date().toISOString().slice(0,10)}.pdf`,
@@ -285,15 +318,15 @@ export async function renderQueryDetail(id) {
 
 /** Escape HTML to prevent XSS */
 function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  return String(s || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 }
 
 /** Minimal markdown: escape HTML first, then convert **bold** and *italic* */
 function parseMd(text) {
   if (!text) return '-';
   return esc(String(text))
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    .replaceAll(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replaceAll(/\*([^*]+)\*/g, '<em>$1</em>');
 }
 
 function field(label, value) {
@@ -358,3 +391,74 @@ function renderMessages(history) {
     </div>`;
   }).join('');
 }
+
+/**
+ * Renders an email body from markdown-style text to formatted HTML.
+ * Handles: **bold**, *italic*, bullet lists (- item / * item), blank-line paragraphs.
+ */
+function renderEmailBody(text) {
+  if (!text) return '<p style="color:var(--text-muted);">—</p>';
+
+  // Split into lines, then group into blocks
+  const lines = String(text).split('\n');
+  const blocks = [];
+  let listItems = [];
+
+  const flushList = () => {
+    if (listItems.length) {
+      blocks.push({ type: 'list', items: [...listItems] });
+      listItems = [];
+    }
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Bullet: starts with - or * followed by space
+    if (/^[-*]\s+/.test(trimmed)) {
+      listItems.push(trimmed.replace(/^[-*]\s+/, ''));
+    } else {
+      flushList();
+      if (trimmed === '') {
+        blocks.push({ type: 'br' });
+      } else {
+        blocks.push({ type: 'p', text: trimmed });
+      }
+    }
+  }
+  flushList();
+
+  // Collapse consecutive <br> into a single paragraph gap
+  const html = [];
+  let prevBr = false;
+  for (const block of blocks) {
+    if (block.type === 'br') {
+      if (!prevBr) html.push('<div style="height:8px;"></div>');
+      prevBr = true;
+    } else if (block.type === 'list') {
+      prevBr = false;
+      html.push(`<ul style="margin:6px 0 6px 18px;padding:0;display:flex;flex-direction:column;gap:3px;">${
+        block.items.map(i => `<li style="line-height:1.7;">${parseMd(i)}</li>`).join('')
+      }</ul>`);
+    } else {
+      prevBr = false;
+      html.push(`<p style="margin:0 0 4px;line-height:1.75;">${parseMd(block.text)}</p>`);
+    }
+  }
+
+  return html.join('');
+}
+
+/** Copy email body to clipboard */
+globalThis.copyEmailBody = (btn) => {
+  const body = btn.getAttribute('data-body') || '';
+  // Decode HTML entities back to plain text
+  const decoded = body
+    .replaceAll('&amp;', '&').replaceAll('&lt;', '<').replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"').replaceAll('&#39;', "'");
+  navigator.clipboard.writeText(decoded).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado';
+    btn.style.color = 'var(--emerald-600)';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+  });
+};

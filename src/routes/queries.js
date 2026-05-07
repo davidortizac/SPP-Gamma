@@ -5,131 +5,9 @@ import express from 'express';
 import { query } from '../db/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { resolveApiKey, resolveModel } from '../lib/gemini-config.js';
+import { runAccountAnalysis } from '../agents/runner.js';
 
 const router = express.Router();
-
-async function callGemini(apiKey, model, prompt, systemPrompt, useSearch = true) {
-  console.log(`[Gemini] modelo=${model} search=${useSearch} key_len=${apiKey?.length ?? 0}`);
-
-  const payload = {
-    contents: [{ parts: [{ text: prompt }] }],
-    systemInstruction: { parts: [{ text: systemPrompt }] },
-    generationConfig: {
-      temperature: 0.4,
-      maxOutputTokens: 65536,
-    },
-  };
-  if (useSearch) payload.tools = [{ google_search: {} }];
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-  console.log(`[Gemini] POST ${url.replace(apiKey, '***')}`);
-
-  const res  = await fetch(url, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(payload),
-  });
-
-  console.log(`[Gemini] HTTP ${res.status} ${res.statusText}`);
-
-  if (!res.ok) {
-    const err = await res.text();
-    console.error(`[Gemini] Error body: ${err.slice(0, 500)}`);
-    throw new Error(`Gemini API ${res.status}: ${err.slice(0, 300)}`);
-  }
-
-  const result = await res.json();
-  const candidate = result?.candidates?.[0];
-  const parts     = candidate?.content?.parts || [];
-
-  console.log(`[Gemini] finish_reason=${candidate?.finishReason} parts=${parts.length}`);
-  parts.forEach((p, i) => {
-    if (p.text)          console.log(`[Gemini] part[${i}] text len=${p.text.length} preview=${p.text.slice(0,80).replace(/\n/g,' ')}`);
-    else if (p.functionCall) console.log(`[Gemini] part[${i}] functionCall=${p.functionCall.name}`);
-    else                 console.log(`[Gemini] part[${i}] keys=${Object.keys(p).join(',')}`);
-  });
-
-  // Concatenar todos los text parts — con search, el JSON puede venir en el último
-  const fullText = parts.map(p => p.text || '').join('');
-  console.log(`[Gemini] fullText len=${fullText.length}`);
-
-  const jsonMatch = fullText.match(/```json\s*([\s\S]*?)```/) || fullText.match(/(\{[\s\S]*\})/);
-  if (jsonMatch) {
-    const raw = jsonMatch[1] || jsonMatch[0];
-    try {
-      return JSON.parse(raw);
-    } catch (parseErr) {
-      console.error('[Gemini] JSON.parse falló:', parseErr.message, '— raw preview:', raw.slice(0, 200));
-      throw new Error('JSON de Gemini inválido: ' + parseErr.message);
-    }
-  }
-  console.error('[Gemini] Sin JSON en respuesta. fullText preview:', fullText.slice(0, 500));
-  throw new Error('La IA no devolvió JSON válido.');
-}
-
-function buildSystemPrompt(manufacturer, solution, country, notes, catalog) {
-  const mfInfo = catalog?.find(m => m.name === manufacturer);
-  const solInfo = mfInfo?.solutions?.find(s => s.name === solution);
-
-  return `Eres un arquitecto senior de preventa especializado en ciberseguridad, infraestructura y observabilidad para mercados latinoamericanos.
-
-PORTAFOLIO DE REFERENCIA:
-- Fabricante: ${manufacturer} (${mfInfo?.description || ''})
-- Solución: ${solution}
-- Productos clave: ${(solInfo?.products || []).join(', ')}
-- Propuesta de valor: ${(solInfo?.value || []).join(', ')}
-- País/Región: ${country || 'Latinoamérica'}
-- Notas adicionales: ${notes || 'Ninguna'}
-
-INSTRUCCIONES:
-1. Investiga la empresa objetivo usando Google Search para obtener información real y actualizada.
-2. Identifica el sector, tamaño, noticias recientes, tecnología, y riesgos relevantes.
-3. Construye un análisis consultivo enfocado EXCLUSIVAMENTE en el fabricante y solución indicados.
-4. El pitch debe ser específico para el contexto real de la empresa, no genérico.
-5. Devuelve ÚNICAMENTE un JSON válido sin texto adicional ni markdown.
-
-SCHEMA REQUERIDO:
-{
-  "empresa": string,
-  "fabricante": string,
-  "solucion": string,
-  "resumenEjecutivo": string,
-  "perfilamiento": {
-    "sector": string,
-    "geografia": string,
-    "core": string,
-    "rol": string,
-    "activosCriticos": string[]
-  },
-  "riesgos": {
-    "tiposDatos": [{"label": string, "value": number}],
-    "riesgoPrincipal": string,
-    "impacto": string
-  },
-  "contextoEstrategico": {
-    "impacto": string,
-    "rompehielo": string
-  },
-  "pitch": {
-    "apertura": string,
-    "valor": string,
-    "cierre": string
-  },
-  "casosDeUso": [{"titulo": string, "dolor": string, "solucion": string, "resultado": string}],
-  "competencias": [{"nombre": string, "descripcion": string}],
-  "normativo": [{"norma": string, "descripcion": string}],
-  "preguntasDescubrimiento": string[],
-  "arquitecturaSugerida": string[],
-  "objeciones": [{"objecion": string, "respuesta": string}],
-  "herramientas": {
-    "email": {"asunto": string, "cuerpo": string},
-    "resumenCISO": {"titulo": string, "vinetas": string[]},
-    "osint": {"titularNoticia": string, "pitchUrgencia": string}
-  },
-  "impactoAntesDespues": {"antes": string[], "despues": string[]},
-  "fuentes": string[]
-}`;
-}
 
 // ── GET /api/queries — lista de consultas ──────────────────────────────────────
 router.get('/', requireAuth, async (req, res) => {
@@ -167,7 +45,7 @@ router.get('/', requireAuth, async (req, res) => {
 
     const countResult = await query(countSql, countParams);
 
-    res.json({ queries: result.rows, total: parseInt(countResult.rows[0].count) });
+    res.json({ queries: result.rows, total: Number.parseInt(countResult.rows[0].count, 10) });
   } catch (err) {
     res.status(500).json({ error: 'Error listando consultas.', details: err.message });
   }
@@ -178,23 +56,22 @@ router.get('/stats', requireAuth, async (req, res) => {
   try {
     const uid = req.user.id;
     const isAdmin = req.user.role === 'admin';
-    const filter = isAdmin ? '' : `AND user_id = ${uid}`;
-
+    const userFilter = isAdmin ? '' : `AND user_id = ${uid}`;
     const [total, done, macro, refs] = await Promise.all([
-      query(`SELECT COUNT(*) FROM queries WHERE 1=1 ${filter}`),
-      query(`SELECT COUNT(*) FROM queries WHERE status = 'done' ${filter}`),
-      query(`SELECT COUNT(*) FROM macro_queries WHERE 1=1 ${isAdmin ? '' : `AND user_id = ${uid}`}`),
-      query(`SELECT COUNT(*) FROM references_ctx WHERE active = true ${isAdmin ? '' : `AND user_id = ${uid}`}`),
+      query(`SELECT COUNT(*) FROM queries WHERE 1=1 ${userFilter}`),
+      query(`SELECT COUNT(*) FROM queries WHERE status = 'done' ${userFilter}`),
+      query(`SELECT COUNT(*) FROM macro_queries WHERE 1=1 ${userFilter}`),
+      query(`SELECT COUNT(*) FROM references_ctx WHERE active = true ${userFilter}`),
     ]);
 
     res.json({
-      total:     parseInt(total.rows[0].count),
-      done:      parseInt(done.rows[0].count),
-      macro:     parseInt(macro.rows[0].count),
-      references: parseInt(refs.rows[0].count),
+      total:     Number.parseInt(total.rows[0].count, 10),
+      done:      Number.parseInt(done.rows[0].count, 10),
+      macro:     Number.parseInt(macro.rows[0].count, 10),
+      references: Number.parseInt(refs.rows[0].count, 10),
     });
   } catch (err) {
-    res.status(500).json({ error: 'Error obteniendo estadísticas.' });
+    res.status(500).json({ error: 'Error obteniendo estadísticas.', details: err?.message });
   }
 });
 
@@ -223,7 +100,7 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'companyName, manufacturer y solution son requeridos.' });
   }
   if (!apiKey) {
-    return res.status(400).json({ error: 'Se requiere GEMINI_API_KEY (servidor o header X-Api-Key).' });
+    return res.status(400).json({ error: 'Falta configuración del modelo Gemini. Contacta al administrador.' });
   }
 
   // Crear registro pendiente
@@ -239,45 +116,30 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(500).json({ error: 'Error creando consulta.', details: err.message });
   }
 
-  // Cargar catálogo para enriquecer el prompt
-  let catalog = [];
-  try {
-    const mfs = await query('SELECT * FROM catalog_manufacturers WHERE active = true');
-    const sols = await query('SELECT cs.*, cm.name AS mf_name FROM catalog_solutions cs JOIN catalog_manufacturers cm ON cm.id = cs.manufacturer_id');
-    catalog = mfs.rows.map(m => ({
-      name: m.name,
-      description: m.description,
-      solutions: sols.rows.filter(s => s.manufacturer_id === m.id).map(s => ({
-        name: s.name,
-        products: s.products || [],
-        value: s.value_props || [],
-      })),
-    }));
-  } catch (_) { /* continúa sin catálogo */ }
-
-  // Cargar referencias activas del usuario si se indicaron
-  let refContext = '';
-  if (Array.isArray(referenceIds) && referenceIds.length > 0) {
-    try {
-      const refs = await query(
-        `SELECT title, url, extracted_text FROM references_ctx
-         WHERE id = ANY($1) AND user_id = $2 AND active = true`,
-        [referenceIds, req.user.id]
-      );
-      if (refs.rows.length > 0) {
-        refContext = '\n\nREFERENCIAS DE CONTEXTO ADICIONAL:\n' +
-          refs.rows.map(r => `- ${r.title}: ${r.url || ''}\n  ${(r.extracted_text || '').slice(0, 500)}`).join('\n');
-      }
-    } catch (_) { /* ignora */ }
-  }
+  // Cargar catálogo y referencias
+  const catalog = await buildCatalogContext();
+  const refContext = await buildRefContext(referenceIds, req.user.id);
 
   // Pipeline IA
   try {
-    const systemPrompt = buildSystemPrompt(manufacturer, solution, country, notes, catalog) + refContext;
-    const userPrompt   = `Investiga la empresa "${companyName}" en ${country || 'Latinoamérica'} y genera un análisis consultivo completo para proponer ${solution} de ${manufacturer}. Usa Google Search para obtener información real y actualizada.`;
-    const model        = await resolveModel();
+    const model = await resolveModel();
+    process.env.GEMINI_MODEL = model;
+    if (apiKey) process.env.GEMINI_API_KEY = apiKey; // Ensure ADK has the key
 
-    const parsed = await callGemini(apiKey, model, userPrompt, systemPrompt, true);
+    const rawResponse = await runAccountAnalysis(companyName, manufacturer, solution, country, notes, { catalog, refContext });
+    
+    // Extraer el JSON final devuelto por el DocumentAgent
+    let parsed;
+    try {
+      const responseText = typeof rawResponse === 'object' && rawResponse?.text ? rawResponse.text : String(rawResponse || '');
+      const jsonMatch = responseText.match(/```json\s*([\s\S]*?)```/) || responseText.match(/(\{[\s\S]*\})/);
+      const raw = jsonMatch ? JSON.parse(jsonMatch[1] || jsonMatch[0]) : JSON.parse(responseText);
+      // Normalizar al esquema esperado por la vista
+      parsed = normalizeAgentOutput(raw, companyName, manufacturer, solution);
+    } catch(e) {
+      console.error("[ADK Parse Error]", e);
+      parsed = { error: "El agente no devolvió un JSON válido", raw: rawResponse };
+    }
 
     await query(
       `UPDATE queries SET result_json = $1, status = 'done', updated_at = NOW() WHERE id = $2`,
@@ -308,4 +170,244 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
+async function buildCatalogContext() {
+  try {
+    const mfs = await query('SELECT * FROM catalog_manufacturers WHERE active = true');
+    const sols = await query('SELECT cs.*, cm.name AS mf_name FROM catalog_solutions cs JOIN catalog_manufacturers cm ON cm.id = cs.manufacturer_id');
+    return mfs.rows.map(m => ({
+      name: m.name,
+      description: m.description,
+      solutions: sols.rows.filter(s => s.manufacturer_id === m.id).map(s => ({
+        name: s.name,
+        products: s.products || [],
+        value: s.value_props || [],
+      })),
+    }));
+  } catch (err) {
+    console.error('Error fetching catalog:', err.message);
+    return [];
+  }
+}
+
+async function buildRefContext(referenceIds, userId) {
+  if (!Array.isArray(referenceIds) || referenceIds.length === 0) return '';
+  try {
+    const refs = await query(
+      `SELECT title, url, extracted_text FROM references_ctx
+       WHERE id = ANY($1) AND user_id = $2 AND active = true`,
+      [referenceIds, userId]
+    );
+    if (refs.rows.length === 0) return '';
+    return '\n\nREFERENCIAS DE CONTEXTO ADICIONAL:\n' +
+      refs.rows.map(r => `- ${r.title}: ${r.url || ''}\n  ${(r.extracted_text || '').slice(0, 500)}`).join('\n');
+  } catch (err) {
+    console.error('Error fetching references:', err.message);
+    return '';
+  }
+}
+
 export default router;
+
+/**
+ * Normaliza la salida del agente ADK al esquema que espera la vista.
+ * Maneja 3 estructuras posibles que puede devolver el document-agent:
+ *   A) { email_prospeccion, reporte_consolidado: { empresa, riesgos, pitch, ... } }
+ *   B) { empresa (string), riesgos, pitch, casosDeUso (array), ... }    ← semi-directo con arrays
+ *   C) { empresa (string), riesgos, pitch, casosDeUso (array), perfilamiento vacío, ... } ← actual
+ */
+function normalizeAgentOutput(raw, companyName, manufacturer, solution) {
+  if (!raw || typeof raw !== 'object') return raw;
+
+  // ── helpers globales ──────────────────────────────────────────────────────
+
+  /** Convierte objeciones de cualquier formato a [{objecion,respuesta}] */
+  const toObjeciones = (obj) => {
+    if (!obj) return [];
+    if (Array.isArray(obj)) return obj.map(o => ({
+      objecion: o.objecion || o.titulo || '',
+      respuesta: o.respuesta || o.refutacion_comercial || o.refutacion_tecnica || '',
+    }));
+    return Object.values(obj).map(o => ({
+      objecion: o.objecion || '',
+      respuesta: o.refutacion_comercial || o.refutacion_tecnica || o.respuesta || '',
+    }));
+  };
+
+  /** Convierte casos de uso de cualquier formato a [{titulo,dolor,solucion,resultado}] */
+  const toCasos = (obj) => {
+    if (!obj) return [];
+    const arr = Array.isArray(obj) ? obj : Object.entries(obj).map(([k, v]) => ({ titulo: k, ...v }));
+    return arr.map(c => ({
+      titulo: (c.titulo || c.nombre || '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      dolor:  c.dolor || c.problema || c.descripcion || '',
+      solucion: c.solucion || c.respuesta || '',
+      resultado: c.resultado || c.impacto || 'Mejora en la postura de seguridad y continuidad operativa.',
+    }));
+  };
+
+  /** Convierte competencias a array de strings o {nombre,descripcion} */
+  const toCompetencias = (obj) => {
+    if (!obj) return [];
+    if (Array.isArray(obj)) return obj;
+    if (obj.diferenciadores_clave) return obj.diferenciadores_clave;
+    return Object.values(obj).filter(v => typeof v === 'string');
+  };
+
+  /** Convierte arquitectura a array de strings */
+  const toArquitectura = (obj) => {
+    if (!obj) return [];
+    if (Array.isArray(obj)) return obj.filter(s => typeof s === 'string');
+    const comps = obj.componentes_clave || obj.capas || [];
+    return comps.map(c => typeof c === 'string' ? c : `${c.nombre || c.capa || ''}: ${(c.elementos || []).join(', ')}`);
+  };
+
+  /** Convierte normativo a [{norma,descripcion}] */
+  const toNormativo = (obj) => {
+    if (!obj) return [];
+    if (Array.isArray(obj)) return obj.map(n =>
+      typeof n === 'string' ? { norma: n.split(':')[0].trim(), descripcion: n } :
+      { norma: n.norma || n.nombre || '', descripcion: n.descripcion || n.descripcion_impacto || '' }
+    );
+    return Object.entries(obj)
+      .filter(([k]) => !['mejores_practicas','estandares_internacionales'].includes(k))
+      .map(([k, v]) => ({ norma: k.toUpperCase().replace(/_/g, ' '), descripcion: typeof v === 'string' ? v : JSON.stringify(v) }));
+  };
+
+  /** Convierte preguntas a array de strings */
+  const toPreguntas = (obj) => {
+    if (!obj) return [];
+    if (Array.isArray(obj)) return obj.filter(v => typeof v === 'string');
+    return Object.values(obj).filter(v => typeof v === 'string');
+  };
+
+  /** Extrae string de riesgo principal (puede ser string u objeto) */
+  const toRiesgoPrincipal = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    return val.titulo || val.riesgo || val.nombre || JSON.stringify(val).slice(0, 200);
+  };
+
+  /** Extrae string de impacto (puede ser string, array u objeto) */
+  const toImpacto = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (Array.isArray(val)) return val.slice(0, 3).join(' · ');
+    // objeto con claves financiero, operacional, reputacional…
+    return Object.values(val).filter(v => typeof v === 'string').slice(0, 2).join(' · ');
+  };
+
+  /** Extrae tipos de datos para los badges */
+  const toTiposDatos = (val) => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val.map(d => ({
+      label: (d.label || d.tipo_dato_activo || d.tipo || d.descripcion || '').slice(0, 30),
+      value: d.value ?? (d.nivel_exposicion === 'ALTO' ? 80 : d.nivel_exposicion === 'MEDIO-ALTO' ? 60 : 40),
+    }));
+    return [];
+  };
+
+  // ── ESTRUCTURA C: el agente ya devolvió empresa/fabricante como strings ────
+  // con casosDeUso array, normativo array, etc. pero perfilamiento vacío y
+  // resumenEjecutivo vacío — enriquecemos los campos vacíos
+  if (typeof raw.empresa === 'string' && Array.isArray(raw.casosDeUso)) {
+    const rie = raw.riesgos || {};
+    const pit = raw.pitch || {};
+    const perf = raw.perfilamiento || {};
+
+    // Construir resumen ejecutivo desde impactoEsperado o casosDeUso si está vacío
+    let resumen = raw.resumenEjecutivo || '';
+    if (!resumen && raw.impactoEsperado) {
+      resumen = Object.values(raw.impactoEsperado).filter(v => typeof v === 'string').slice(0, 2).join(' ');
+    }
+    if (!resumen && raw.casosDeUso?.length) {
+      resumen = raw.casosDeUso.slice(0, 2).map(c => c.solucion || c.dolor || '').join(' ');
+    }
+
+    // Enriquecer perfilamiento vacío desde casosDeUso/competencias
+    const sector = perf.sector || '';
+    const activos = perf.activosCriticos?.length ? perf.activosCriticos
+      : (raw.competencias || []).slice(0, 4).map(c => typeof c === 'string' ? c : c.nombre || '');
+
+    return {
+      empresa: raw.empresa || companyName,
+      fabricante: raw.fabricante || manufacturer,
+      solucion: raw.solucion || solution,
+      resumenEjecutivo: resumen,
+      perfilamiento: {
+        sector,
+        geografia: perf.geografia || '',
+        rol: perf.rol || '',
+        activosCriticos: activos,
+      },
+      riesgos: {
+        riesgoPrincipal: toRiesgoPrincipal(rie.riesgoPrincipal || rie.riesgo_principal),
+        impacto: toImpacto(rie.riesgo || rie.impacto_potencial),
+        tiposDatos: toTiposDatos(rie.tiposDatos || rie.evaluacion_exposicion_datos),
+      },
+      pitch: {
+        apertura: pit.apertura || pit.apertura_consultiva || '',
+        valor: pit.valor || pit.propuesta_valor || '',
+        cierre: pit.cierre || '',
+      },
+      casosDeUso: toCasos(raw.casosDeUso),
+      arquitecturaSugerida: toArquitectura(raw.arquitecturaSugerida || raw.arquitectura_sugerida),
+      competencias: toCompetencias(raw.competencias),
+      normativo: toNormativo(raw.normativo),
+      preguntasDescubrimiento: toPreguntas(raw.preguntasDescubrimiento || raw.preguntas_descubrimiento),
+      objeciones: toObjeciones(raw.objeciones),
+      herramientas: {
+        email: raw.herramientas?.email || null,
+        resumenCISO: raw.herramientas?.resumenCISO || null,
+      },
+      impactoEsperado: raw.impactoEsperado || null,
+      fuentes: raw.fuentes || [],
+    };
+  }
+
+  // ── ESTRUCTURA A: { email_prospeccion, reporte_consolidado: {...} } ─────────
+  const rep = raw.reporte_consolidado || raw;
+  const emp = rep.empresa || {};
+  const rie = rep.riesgos || {};
+  const pit = rep.pitch || {};
+  const her = rep.herramientas || {};
+
+  const tiposDatos = toTiposDatos(rie.evaluacion_exposicion_datos || rie.tiposDatos);
+  const emailSrc = raw.email_prospeccion || her.email || {};
+  const emailNorm = emailSrc.asunto ? { asunto: emailSrc.asunto, cuerpo: emailSrc.cuerpo || '' } : null;
+
+  const resumen = rep.perfilamiento?.descripcion_general
+    || (rep.contexto_estrategico?.desafios_negocio_relacionados_ciberseguridad || []).slice(0, 3).join(' · ')
+    || (typeof emp === 'string' ? '' : emp.core_negocio || '');
+
+  return {
+    empresa: (typeof emp === 'string' ? emp : emp.nombre) || companyName,
+    fabricante: manufacturer,
+    solucion: solution,
+    resumenEjecutivo: resumen,
+    perfilamiento: {
+      sector: (typeof emp === 'object' ? emp.sector : '') || '',
+      geografia: (typeof emp === 'object' ? emp.geografia || emp.ubicacion : '') || '',
+      rol: rep.perfilamiento?.rol_en_industria || '',
+      activosCriticos: (typeof emp === 'object' ? emp.activos_criticos_tecnologicos : []) || [],
+    },
+    riesgos: {
+      riesgoPrincipal: toRiesgoPrincipal(rie.riesgo_principal || rie.riesgoPrincipal),
+      impacto: toImpacto(rie.impacto_potencial || rie.impacto),
+      tiposDatos,
+    },
+    pitch: {
+      apertura: pit.apertura_consultiva || pit.apertura || '',
+      valor: pit.propuesta_valor || pit.valor || '',
+      cierre: pit.cierre || '',
+    },
+    casosDeUso: toCasos(rep.casos_de_uso || rep.casosDeUso),
+    arquitecturaSugerida: toArquitectura(rep.arquitectura_sugerida || rep.arquitecturaSugerida),
+    competencias: toCompetencias(rep.competencias),
+    normativo: toNormativo(rep.normativo),
+    preguntasDescubrimiento: toPreguntas(rep.preguntas_descubrimiento || rep.preguntasDescubrimiento),
+    objeciones: toObjeciones(rep.objeciones),
+    herramientas: { email: emailNorm, resumenCISO: null },
+    impactoEsperado: rep.impacto_esperado || null,
+    fuentes: [],
+  };
+}

@@ -32,10 +32,16 @@ export async function createTables() {
       password_hash TEXT   NOT NULL,
       role         TEXT    NOT NULL DEFAULT 'analyst',
       active       BOOLEAN NOT NULL DEFAULT true,
+      permissions  JSONB   DEFAULT '[]',
       created_at   TIMESTAMPTZ DEFAULT NOW(),
       updated_at   TIMESTAMPTZ DEFAULT NOW()
     );
   `);
+
+  // Migración para añadir permissions a bases de datos existentes
+  try {
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '[]'`);
+  } catch(e) { console.warn('No se pudo añadir columna permissions:', e.message); }
 
   await query(`
     CREATE TABLE IF NOT EXISTS catalog_manufacturers (
@@ -139,7 +145,9 @@ export async function seedCatalog() {
       await query(`
         INSERT INTO catalog_solutions (manufacturer_id, name, products, value_props)
         VALUES ($1, $2, $3, $4)
-        ON CONFLICT (manufacturer_id, name) DO NOTHING
+        ON CONFLICT (manufacturer_id, name) DO UPDATE
+          SET products = EXCLUDED.products,
+              value_props = EXCLUDED.value_props
       `, [mfId, sol.name,
           JSON.stringify(sol.products || []),
           JSON.stringify(sol.value   || [])]);

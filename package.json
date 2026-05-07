@@ -1,7 +1,7 @@
 {
   "name": "spp-gamma",
   "version": "2.0.0",
-  "description": "Gamma Portfolio Explorer — Plataforma agentica multimarca para equipos de preventa",
+  "description": "Portfolio Explorer - Gamma — Plataforma agentica multimarca para equipos de preventa",
   "type": "module",
   "main": "server.js",
   "scripts": {
@@ -9,10 +9,12 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
+    "@google/adk": "^1.1.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^16.5.0",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.3",
-    "pg": "^8.13.0"
+    "pg": "^8.13.0",
+    "zod": "^4.4.3"
   }
 }

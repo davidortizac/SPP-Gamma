@@ -1,4 +1,4 @@
-# 📘 Manual de Usuario — Gamma Portfolio Explorer (SPP-Gamma)
+# 📘 Manual de Usuario — Portfolio Explorer - Gamma (SPP-Gamma)
 
 > **Versión:** 2.0 | **Última actualización:** Abril 2026  
 > Aplicación multimarca para explorar portafolio por fabricante y generar análisis comerciales/técnicos asistidos por IA (Gemini).
@@ -34,7 +34,7 @@
 
 ## 1. ¿Qué es SPP-Gamma?
 
-**Gamma Portfolio Explorer** es una herramienta de apoyo a la preventa de ciberseguridad e infraestructura. Permite a los equipos comerciales y de preventa:
+**Portfolio Explorer - Gamma** es una herramienta de apoyo a la preventa de ciberseguridad e infraestructura. Permite a los equipos comerciales y de preventa:
 
 - Explorar el portafolio de múltiples fabricantes (Cisco, Palo Alto, Fortinet, etc.)
 - Ingresar el nombre de una cuenta objetivo y obtener un **análisis comercial y técnico completo generado por IA**
@@ -47,7 +47,7 @@ La IA utilizada es **Google Gemini** con capacidad de búsqueda web, lo que le p
 
 ## 2. Arquitectura de la aplicación
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │           Navegador (Frontend)          │
 │   HTML + Vanilla JS + CSS               │
@@ -77,11 +77,11 @@ El backend actúa como **proxy seguro**: la API Key de Gemini nunca se expone al
 
 ## 3. Requisitos
 
-| Opción | Requisito |
-|--------|-----------|
-| Docker (recomendado) | Docker Desktop instalado y corriendo |
-| Node.js directo | Node.js ≥ 18.x |
-| Ambas | API Key de Google Gemini (gratuita en [aistudio.google.com](https://aistudio.google.com)) |
+| Opción               | Requisito                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------- |
+| Docker (recomendado) | Docker Desktop instalado y corriendo                                                        |
+| Node.js directo      | Node.js ≥ 18.x                                                                              |
+| Ambas                | API Key de Google Gemini (gratuita en [aistudio.google.com](https://aistudio.google.com))   |
 
 ---
 
@@ -92,6 +92,7 @@ El backend actúa como **proxy seguro**: la API Key de Gemini nunca se expone al
 Si es tu primera vez usando este tipo de aplicaciones, sigue estos pasos desde cero:
 
 #### Paso 1: Instalar las herramientas necesarias
+
 1. **Instalar Git:**
    - Descarga e instala Git desde [git-scm.com](https://git-scm.com/downloads).
    - Durante la instalación, puedes dejar todas las opciones por defecto haciendo clic en "Siguiente" hasta finalizar.
@@ -100,6 +101,7 @@ Si es tu primera vez usando este tipo de aplicaciones, sigue estos pasos desde c
    - Ábrelo una vez finalizada la instalación. Es posible que te pida reiniciar la computadora. **Asegúrate de que Docker Desktop esté abierto y ejecutándose** en segundo plano antes de continuar (verás el ícono de la ballena en tu barra de tareas).
 
 #### Paso 2: Ejecutar los comandos
+
 Abre la **Terminal** (Busca "Símbolo del sistema" o "PowerShell" en tu menú de inicio de Windows, o "Terminal" en macOS) y copia y pega, uno por uno, los siguientes comandos y presiona la tecla **Enter** después de cada uno:
 
 ```bash
@@ -114,6 +116,7 @@ docker compose up --build
 ```
 
 #### Paso 3: Abrir la aplicación
+
 ¡Listo! Abre tu navegador web favorito (Chrome, Edge, Safari) e ingresa a: **`http://localhost:3000`**
 
 *(Puedes pegar la clave de Gemini que obtuviste directamente en la interfaz gráfica).*
@@ -141,6 +144,7 @@ docker compose up --build
 ```
 
 Para detener el contenedor:
+
 ```bash
 docker compose down
 ```
@@ -172,14 +176,18 @@ npm start
 Tienes **dos formas** de proporcionar la API Key:
 
 ### Opción A — En el servidor (`.env`)
+
 Edita el archivo `.env`:
+
 ```env
 GEMINI_API_KEY=xxxx
 GEMINI_MODEL=gemini-2.5-flash
 ```
+
 ✅ Recomendada para producción. La key **nunca se expone al cliente**.
 
 ### Opción B — En la interfaz web
+
 Si `GEMINI_API_KEY` está vacío en el servidor, la app mostrará un campo en la UI para pegar la key manualmente. Esta opción es útil para demos rápidas.
 
 > ⚠️ **Advertencia:** La key ingresada en la UI se envía al backend en cada petición. Úsala solo en entornos de confianza.
@@ -192,9 +200,9 @@ Si `GEMINI_API_KEY` está vacío en el servidor, la app mostrará un campo en la
 
 Al abrir `http://localhost:3000` verás:
 
-```
+```text
 ┌──────────────────────────────────────────────┐
-│  🔵 Gamma Portfolio Explorer                 │
+│  🔵 Portfolio Explorer - Gamma               │
 │                                              │
 │  [Selector de Fabricante ▼]                  │
 │  [Selector de Solución   ▼]                  │
@@ -222,18 +230,18 @@ Al abrir `http://localhost:3000` verás:
 
 Una vez generado el perfil, verás estas secciones:
 
-| Sección | Descripción |
-|---------|-------------|
-| **Resumen Ejecutivo** | Síntesis comercial de la cuenta y la oportunidad |
-| **Perfilamiento** | Sector, geografía, giro de negocio, cargo objetivo y activos críticos |
-| **Mapa de Riesgos** | Gráfico de tipos de datos con niveles de exposición estimados |
-| **Casos de Uso** | Lista de escenarios aplicables: dolor, solución y resultado esperado |
-| **Pitch de Ventas** | Apertura consultiva, propuesta de valor y cierre sugerido |
-| **Competencias del Fabricante** | Diferenciales técnicos y comerciales relevantes |
-| **Marco Normativo** | Regulaciones aplicables al sector/país de la cuenta |
-| **Preguntas de Descubrimiento** | Preguntas clave para la reunión con el cliente |
-| **Arquitectura Sugerida** | Componentes y productos recomendados |
-| **Fuentes** | Referencias públicas usadas por la IA |
+| Sección                       | Descripción                                                               |
+| ----------------------------- | ------------------------------------------------------------------------- |
+| **Resumen Ejecutivo**         | Síntesis comercial de la cuenta y la oportunidad                          |
+| **Perfilamiento**             | Sector, geografía, giro de negocio, cargo objetivo y activos críticos     |
+| **Mapa de Riesgos**           | Gráfico de tipos de datos con niveles de exposición estimados             |
+| **Casos de Uso**              | Lista de escenarios aplicables: dolor, solución y resultado esperado      |
+| **Pitch de Ventas**           | Apertura consultiva, propuesta de valor y cierre sugerido                 |
+| **Competencias del Fabricante** | Diferenciales técnicos y comerciales relevantes                           |
+| **Marco Normativo**           | Regulaciones aplicables al sector/país de la cuenta                       |
+| **Preguntas de Descubrimiento** | Preguntas clave para la reunión con el cliente                          |
+| **Arquitectura Sugerida**     | Componentes y productos recomendados                                      |
+| **Fuentes**                   | Referencias públicas usadas por la IA                                     |
 
 > 💡 **Tip:** El botón **"Cargar Demo"** genera un perfil de ejemplo sin consumir la API, ideal para mostrar la herramienta en presentaciones.
 
@@ -281,27 +289,31 @@ Dentro de cada fabricante puedes:
 El backend expone los siguientes endpoints:
 
 ### Configuración
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `GET` | `/api/config` | Retorna si hay server key configurada y el modelo por defecto |
+
+| Método | Endpoint        | Descripción                                                   |
+| ------ | --------------- | ------------------------------------------------------------- |
+| `GET`  | `/api/config`   | Retorna si hay server key configurada y el modelo por defecto |
 
 ### Catálogo
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `GET` | `/api/catalog` | Retorna el catálogo completo |
-| `POST` | `/api/catalog/manufacturers` | Crea un nuevo fabricante |
-| `PUT` | `/api/catalog/manufacturers/:name` | Actualiza un fabricante |
-| `DELETE` | `/api/catalog/manufacturers/:name` | Elimina un fabricante |
-| `POST` | `/api/catalog/manufacturers/:name/solutions` | Agrega una solución |
-| `PUT` | `/api/catalog/manufacturers/:mfName/solutions/:solutionName` | Actualiza una solución |
-| `DELETE` | `/api/catalog/manufacturers/:mfName/solutions/:solutionName` | Elimina una solución |
+
+| Método   | Endpoint                                                       | Descripción                  |
+| -------- | -------------------------------------------------------------- | ---------------------------- |
+| `GET`    | `/api/catalog`                                                 | Retorna el catálogo completo |
+| `POST`   | `/api/catalog/manufacturers`                                   | Crea un nuevo fabricante     |
+| `PUT`    | `/api/catalog/manufacturers/:name`                             | Actualiza un fabricante      |
+| `DELETE` | `/api/catalog/manufacturers/:name`                             | Elimina un fabricante        |
+| `POST`   | `/api/catalog/manufacturers/:name/solutions`                   | Agrega una solución          |
+| `PUT`    | `/api/catalog/manufacturers/:mfName/solutions/:solutionName`   | Actualiza una solución       |
+| `DELETE` | `/api/catalog/manufacturers/:mfName/solutions/:solutionName`   | Elimina una solución         |
 
 ### Generación IA
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
+
+| Método | Endpoint                | Descripción                          |
+| ------ | ----------------------- | ------------------------------------ |
 | `POST` | `/api/generate-profile` | Genera análisis de cuenta con Gemini |
 
-#### Body de `/api/generate-profile`:
+#### Body de `/api/generate-profile`
+
 ```json
 {
   "companyName": "Bancolombia",
@@ -312,13 +324,14 @@ El backend expone los siguientes endpoints:
   "apiKey": "xxxx" 
 }
 ```
+
 > El campo `apiKey` es opcional si `GEMINI_API_KEY` está definido en el servidor.
 
 ---
 
 ## 9. Estructura de archivos
 
-```
+```text
 SPP-Gamma/
 ├── server.js              # Backend Express — API y proxy Gemini
 ├── package.json           # Dependencias Node.js
@@ -340,11 +353,11 @@ SPP-Gamma/
 
 ## 10. Variables de entorno
 
-| Variable | Requerida | Default | Descripción |
-|----------|-----------|---------|-------------|
-| `GEMINI_API_KEY` | No* | `""` | API Key de Google Gemini. Si está vacía, se solicita en la UI. |
-| `GEMINI_MODEL` | No | `gemini-2.5-flash` | Modelo de Gemini a usar |
-| `PORT` | No | `3000` | Puerto en que escucha el servidor |
+| Variable         | Requerida | Default            | Descripción                                                    |
+| ---------------- | --------- | ------------------ | -------------------------------------------------------------- |
+| `GEMINI_API_KEY` | No*       | `""`               | API Key de Google Gemini. Si está vacía, se solicita en la UI. |
+| `GEMINI_MODEL`   | No        | `gemini-2.5-flash` | Modelo de Gemini a usar                                        |
+| `PORT`           | No        | `3000`             | Puerto en que escucha el servidor                              |
 
 > \* Si no se define en el servidor, **debe** ingresarse manualmente en la interfaz.
 
@@ -374,18 +387,18 @@ Agrega `PORT=8080` (o el puerto deseado) en tu archivo `.env`.
 
 ## 12. Mejoras futuras sugeridas
 
-| Mejora | Descripción |
-|--------|-------------|
-| 🗄️ Persistencia en BD | Migrar `catalog.json` a PostgreSQL o MongoDB |
-| 🔐 Autenticación | Login con Google o credenciales locales |
-| 📜 Historial de análisis | Guardar perfiles generados por cuenta |
-| 📄 Exportación PDF/PPT | Descargar el análisis como presentación lista |
-| 🤖 Modo RAG | Alimentar la IA con documentos propios de tu empresa |
-| 🔗 Integración CRM | Sincronizar cuentas con Salesforce, HubSpot, etc. |
-| 🌐 Multi-idioma | Soporte para inglés y otros idiomas |
-| 📊 Dashboard analítico | Métricas de uso y fabricantes más consultados |
+| Mejora                    | Descripción                                           |
+| ------------------------- | ----------------------------------------------------- |
+| 🗄️ Persistencia en BD     | Migrar `catalog.json` a PostgreSQL o MongoDB          |
+| 🔐 Autenticación          | Login con Google o credenciales locales               |
+| 📜 Historial de análisis  | Guardar perfiles generados por cuenta                 |
+| 📄 Exportación PDF/PPT    | Descargar el análisis como presentación lista         |
+| 🤖 Modo RAG               | Alimentar la IA con documentos propios de tu empresa  |
+| 🔗 Integración CRM        | Sincronizar cuentas con Salesforce, HubSpot, etc.     |
+| 🌐 Multi-idioma           | Soporte para inglés y otros idiomas                   |
+| 📊 Dashboard analítico    | Métricas de uso y fabricantes más consultados         |
 
 ---
 
-*Manual generado para el proyecto SPP-Gamma — Gamma Portfolio Explorer*  
+*Manual generado para el proyecto SPP-Gamma — Portfolio Explorer - Gamma*  
 *Repositorio: [github.com/davidortizac/SPP-Gamma](https://github.com/davidortizac/SPP-Gamma)*

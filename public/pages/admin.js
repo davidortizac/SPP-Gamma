@@ -25,6 +25,7 @@ export async function renderAdmin() {
         ${[
           { id: 'users',  label: 'Usuarios' },
           { id: 'config', label: 'Configuración' },
+          { id: 'queries',label: 'Historial Global' },
           { id: 'db',     label: 'Base de datos' },
         ].map(t => `
           <button class="tab-btn${t.id === activeTab ? ' active' : ''}" onclick="switchAdminTab('${t.id}')">${t.label}</button>
@@ -51,9 +52,61 @@ export async function renderAdmin() {
 async function loadTab(tab) {
   const wrap = document.getElementById('admin-tab-content');
   wrap.innerHTML = '<div class="page-loading" style="min-height:200px;"><div class="loader loader-dark loader-lg"></div></div>';
-  if (tab === 'users')  return loadUsersTab(wrap);
-  if (tab === 'config') return loadConfigTab(wrap);
-  if (tab === 'db')     return loadDbTab(wrap);
+  if (tab === 'users')   return loadUsersTab(wrap);
+  if (tab === 'config')  return loadConfigTab(wrap);
+  if (tab === 'queries') return loadGlobalQueriesTab(wrap);
+  if (tab === 'db')      return loadDbTab(wrap);
+}
+
+// ── Global Queries ─────────────────────────────────────────────────────────────
+async function loadGlobalQueriesTab(wrap) {
+  try {
+    const { queries = [] } = await api.get('/api/admin/queries');
+
+    wrap.innerHTML = `
+      <div class="card" style="overflow:hidden;">
+        <div class="card-header">
+          <h3>Consultas de todos los usuarios</h3>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>Solución</th>
+                <th>Usuario</th>
+                <th>Fecha</th>
+                <th style="width:100px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${queries.length === 0 ? '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted);">No hay consultas registradas.</td></tr>' : ''}
+              ${queries.map(q => `
+                <tr>
+                  <td style="font-weight:600;">${esc(q.company_name)}</td>
+                  <td>${esc(q.manufacturer)} - ${esc(q.solution)}</td>
+                  <td style="color:var(--text-secondary);">${esc(q.user_name)}</td>
+                  <td style="font-size:12px;color:var(--text-muted);">${fmtDate(q.created_at)}</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--rose-600);" onclick="deleteGlobalQuery(${q.id})">Borrar</button>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    globalThis.deleteGlobalQuery = async (id) => {
+      if (!await confirmDialog('¿Estás seguro de que deseas eliminar permanentemente esta consulta?')) return;
+      try {
+        await api.delete(`/api/admin/queries/${id}`);
+        showToast('Consulta eliminada', 'success');
+        loadGlobalQueriesTab(wrap);
+      } catch (err) { showToast(err.message, 'error'); }
+    };
+  } catch (err) {
+    wrap.innerHTML = `<div class="alert alert-error">${esc(err.message)}</div>`;
+  }
 }
 
 // ── Users ──────────────────────────────────────────────────────────────────────
@@ -131,10 +184,23 @@ function permSummary(u) {
 
 function openUserModal(user) {
   const isEdit  = Boolean(user);
-  const curPerms = isEdit
-    ? (Array.isArray(user.permissions) ? user.permissions : ALL_PERMS.map(p => p.key))
-    : ALL_PERMS.map(p => p.key);
+  let curPerms = ALL_PERMS.map(p => p.key);
+  if (isEdit && Array.isArray(user.permissions)) {
+    curPerms = user.permissions;
+  }
   const isAdminUser = user?.role === 'admin';
+  
+  let activeHtml = '';
+  if (isEdit) {
+    const checkedAttr = user?.active ? 'checked' : '';
+    activeHtml = `
+        <div class="form-group" style="margin:0;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input id="u-active" type="checkbox" ${checkedAttr} style="accent-color:var(--brand-600);" />
+            <span style="font-size:13.5px;font-weight:500;color:var(--text-primary);">Usuario activo</span>
+          </label>
+        </div>`;
+  }
 
   openModal({
     title: isEdit ? 'Editar usuario' : 'Nuevo usuario',
@@ -155,8 +221,8 @@ function openUserModal(user) {
         <div class="form-group" style="margin:0;">
           <label class="form-label">Rol</label>
           <select id="u-role" class="form-input form-select" onchange="updatePermVisibility()">
-            <option value="analyst" ${user?.role !== 'admin' ? 'selected' : ''}>Analista</option>
-            <option value="admin"   ${user?.role === 'admin'  ? 'selected' : ''}>Administrador</option>
+            <option value="analyst" ${user?.role === 'admin' ? '' : 'selected'}>Analista</option>
+            <option value="admin"   ${user?.role === 'admin' ? 'selected' : ''}>Administrador</option>
           </select>
         </div>
 
@@ -176,13 +242,7 @@ function openUserModal(user) {
           </div>
         </div>
 
-        ${isEdit ? `
-        <div class="form-group" style="margin:0;">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input id="u-active" type="checkbox" ${user?.active ? 'checked' : ''} style="accent-color:var(--brand-600);" />
-            <span style="font-size:13.5px;font-weight:500;color:var(--text-primary);">Usuario activo</span>
-          </label>
-        </div>` : ''}
+        ${activeHtml}
       </div>`,
     confirmText: isEdit ? 'Guardar cambios' : 'Crear usuario',
     onConfirm: async () => {
@@ -362,5 +422,5 @@ async function loadDbTab(wrap) {
   }
 }
 
-function esc(s)     { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-function escAttr(s) { return String(s || '').replace(/"/g, '&quot;'); }
+function esc(s)     { return String(s || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;'); }
+function escAttr(s) { return String(s || '').replaceAll('"', '&quot;'); }

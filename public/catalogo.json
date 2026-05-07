@@ -137,8 +137,77 @@
       ]
     },
     {
+      "name": "Fortinet AI",
+      "description": "Plataforma Fortinet Security Fabric impulsada por IA para seguridad de red, operaciones de seguridad (SOC) e infraestructura de IA.",
+      "solutions": [
+        {
+          "name": "FW IA",
+          "products": [
+            "FortiAIGate",
+            "FortiAIate VM"
+          ],
+          "value": [
+            "Aceleración de hardware para IA",
+            "Descubrimiento de Shadow AI"
+          ]
+        },
+        {
+          "name": "GenAI-Powered Operations",
+          "products": [
+            "FortiAI for SOC",
+            "FortiAI for NOC",
+            "FortiAI Assist"
+          ],
+          "value": [
+            "Asistente conversacional en 32 idiomas",
+            "Priorización inteligente de alertas",
+            "Generación automática de reportes de amenazas"
+          ]
+        },
+        {
+          "name": "LLM & Agentic AI Security",
+          "products": [
+            "FortiAIGate",
+            "FortiAIFlow",
+            "FortiAIGuard"
+          ],
+          "value": [
+            "Protección contra Prompt Injection y Jailbreaking",
+            "Reverse Proxy para modelos LLM",
+            "Control de costos y consumo de tokens"
+          ]
+        },
+        {
+          "name": "AI Infrastructure Protection",
+          "products": [
+            "FortiCNAPP for AI",
+            "FortiWeb (AI AppSec)",
+            "FortiDLP for AI"
+          ],
+          "value": [
+            "Seguridad de datos de entrenamiento",
+            "Detección de anomalías en GPUs",
+            "Prevención de fugas de PII en modelos públicos"
+          ]
+        },
+        {
+          "name": "SOC / SIEM / SOAR",
+          "products": [
+            "FortiAnalyzer",
+            "FortiSIEM",
+            "FortiSOAR"
+          ],
+          "value": [
+            "Triage inteligente de incidentes",
+            "Respuesta autónoma ante campañas",
+            "Investigación acelerada por SkopeAI"
+          ]
+        }
+      ]
+    },
+    {
       "name": "CrowdStrike",
-      "description": "Plataforma Falcon para protección de endpoints, identidades, nube y operaciones de seguridad.",
+      "description": "Plataforma Falcon para protección de endpoints, identidades, nube, operaciones de seguridad e IA.",
       "solutions": [
         {
           "name": "Endpoint / XDR",
@@ -185,6 +254,34 @@
             "Correlación",
             "Automatización",
             "Respuesta"
+          ]
+        },
+        {
+          "name": "Adversary Intelligence (AIDR)",
+          "products": [
+            "Falcon Adversary Intelligence Premium",
+            "Falcon Adversary Hunter",
+            "Falcon Sandbox"
+          ],
+          "value": [
+            "Anticipación a atacantes",
+            "Análisis de malware",
+            "Inteligencia táctica"
+          ]
+        },
+        {
+          "name": "AI Security",
+          "products": [
+            "Falcon AI-SPM",
+            "Falcon Data Protection for AI",
+            "Falcon Runtime AI Protection",
+            "Charlotte AI"
+          ],
+          "value": [
+            "Gestión de postura de IA",
+            "Prevención de fuga de datos en prompts",
+            "Protección contra inyección de comandos",
+            "Asistente generativo para analistas"
           ]
         }
       ]
@@ -300,41 +397,56 @@
     },
     {
       "name": "Netskope",
-      "description": "Plataforma Netskope One para SSE/SASE, CASB, acceso privado y protección de datos.",
+      "description": "Plataforma Netskope One para SSE/SASE, protección de datos y seguridad integral para la adopción de IA generativa.",
       "solutions": [
         {
-          "name": "SSE",
+          "name": "GenAI Security & Visibility",
           "products": [
-            "Netskope One SSE"
+            "Netskope One Next Gen SWG",
+            "Cloud Confidence Index (CCI) for AI",
+            "AI Visibility Dashboard"
           ],
           "value": [
-            "SWG",
-            "CASB",
-            "ZTNA"
+            "Visibilidad de Shadow AI",
+            "Control de instancias personales vs. corporativas",
+            "Coaching de usuario en tiempo real"
           ]
         },
         {
-          "name": "SASE",
+          "name": "AI Application & Agent Security",
           "products": [
-            "Netskope One SASE",
-            "Netskope One Private Access"
+            "Netskope One AI Gateway",
+            "Netskope One Agentic Broker"
           ],
           "value": [
-            "Acceso seguro",
-            "Conectividad moderna",
-            "Experiencia distribuida"
+            "Seguridad para comunicaciones App-to-LLM",
+            "Control de agentes autónomos y protocolo MCP",
+            "Autenticación y rate-limiting de APIs de IA"
           ]
         },
         {
-          "name": "CASB / SaaS Security",
+          "name": "AI Threat & Data Protection",
           "products": [
-            "Netskope One CASB",
-            "Netskope One SSPM"
+            "Netskope One AI Guardrails",
+            "Netskope One AI Red Teaming",
+            "SkopeAI"
           ],
           "value": [
-            "Visibilidad SaaS",
-            "Gobierno de aplicaciones",
-            "Postura SaaS"
+            "Protección contra Prompt Injection y Jailbreak",
+            "Pruebas de estrés automatizadas para modelos",
+            "Moderación de contenido y cumplimiento legal"
+          ]
+        },
+        {
+          "name": "AI Data Governance",
+          "products": [
+            "Netskope One DLP for AI",
+            "Netskope One DSPM for AI"
+          ],
+          "value": [
+            "Prevención de fuga de datos en prompts",
+            "Seguridad de datos de entrenamiento (RAG)",
+            "Clasificación semántica de datos sensibles"
           ]
         }
       ]
