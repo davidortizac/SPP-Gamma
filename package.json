@@ -1,12 +1,18 @@
 {
-  "name": "multibrand-sales-app",
-  "version": "1.0.0",
-  "description": "Aplicacion multimarca de portafolio para preventa de ciberseguridad",
+  "name": "spp-gamma",
+  "version": "2.0.0",
+  "description": "Gamma Portfolio Explorer — Plataforma agentica multimarca para equipos de preventa",
+  "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^16.5.0",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.13.0"
   }
 }

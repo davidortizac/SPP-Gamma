@@ -2,294 +2,603 @@
   "manufacturers": [
     {
       "name": "Fortinet",
-      "description": "Seguridad de red, SASE, ZTNA, SOC y protección de infraestructura OT con la plataforma más amplia en ciberseguridad.",
+      "category": "security",
+      "description": "Plataforma Fortinet Security Fabric para seguridad de red, SASE, SecOps, protección de aplicaciones, identidades, endpoints y OT.",
       "solutions": [
         {
-          "name": "Secure Networking",
-          "products": [
-            "FortiGate",
-            "FortiSwitch",
-            "FortiAP",
-            "FortiManager",
-            "FortiNAC",
-            "FortiExtender",
-            "FortiGate Cloud",
-            "FortiEdge Cloud",
-            "FortiAIOps",
-            "FortiFone",
-            "FortiVoice",
-            "FortiCamera",
-            "FortiRecorder",
-            "FortiConverter",
-            "FGaaS"
-          ],
-          "value": [
-            "Convergencia de red y seguridad con aceleración ASIC",
-            "Conectividad Ethernet y Wi-Fi protegida",
-            "Control de acceso y visibilidad de dispositivos (NAC)",
-            "Gestión centralizada de infraestructura Fortinet",
-            "Extensión de conectividad LTE y LAN",
-            "Comunicaciones unificadas seguras",
-            "Seguridad física con videovigilancia inteligente",
-            "Migración automatizada de firewall"
-          ]
+          "name": "NGFW / Secure SD-WAN",
+          "products": ["FortiGate", "FortiGate VM", "FortiGate CNF", "FortiGate SD-WAN", "FortiOS"],
+          "value": ["Firewall de siguiente generación", "SD-WAN seguro", "Protección y segmentación"]
         },
         {
-          "name": "Unified SASE",
-          "products": [
-            "FortiGate SD-WAN",
-            "FortiClient ZTA Agent",
-            "FortiProxy",
-            "FortiCASB",
-            "FortiClient EPP Agent",
-            "FortiSASE",
-            "FortiMonitor",
-            "FortiGate VM",
-            "FortiWeb",
-            "FortiGSLB",
-            "FortiGate CNF",
-            "FortiADC",
-            "FortiDDoS",
-            "FortiFlex",
-            "FortiPoints"
-          ],
-          "value": [
-            "SD-WAN seguro y centrado en aplicaciones",
-            "Acceso remoto seguro y reducción de superficie de ataque (ZTNA)",
-            "Control de cumplimiento y acceso a internet",
-            "Prevención de configuraciones incorrectas en SaaS",
-            "Protección de endpoint con AV, URL y Sandbox",
-            "Servicios de seguridad entregados desde la nube (SSE)",
-            "Monitoreo de experiencia digital (DEM)",
-            "Firewall cloud-native para entornos multi-cloud",
-            "Protección de aplicaciones web (WAF)",
-            "Continuidad de negocio con balanceo global",
-            "Protección DDoS con inspección en capas 3, 4 y 7",
-            "Licenciamiento flexible por consumo"
-          ]
+          "name": "Unified SASE / ZTNA",
+          "products": ["FortiSASE", "FortiClient ZTA Agent", "FortiClient EPP Agent", "FortiProxy", "FortiCASB", "FortiMonitor"],
+          "value": ["Acceso seguro", "Protección de usuarios híbridos", "Visibilidad y control"]
         },
         {
-          "name": "AI-Powered FortiGuard Security",
-          "products": [
-            "FortiGuard Web Filtering",
-            "FortiGuard IPS",
-            "FortiGuard AV",
-            "FortiGuard Sandbox",
-            "FortiGuard IL MPS",
-            "FortiGuard Application Control",
-            "FortiGuard Attack Surface",
-            "FortiGuard DLP",
-            "FortiGuard OT Security Services",
-            "FortiGuard IoC",
-            "FortiGuard IL CASB"
-          ],
-          "value": [
-            "Inteligencia de amenazas en tiempo real con IA",
-            "Filtrado web y control de aplicaciones",
-            "Protección contra amenazas desconocidas y 0-day",
-            "Prevención de intrusiones (IPS)",
-            "Prevención de fuga de datos (DLP)",
-            "Indicadores de compromiso (IoC)",
-            "Servicios de seguridad para entornos OT"
-          ]
+          "name": "SOC / SIEM / SOAR / NDR",
+          "products": ["FortiAnalyzer", "FortiSIEM", "FortiSOAR", "FortiNDR", "FortiAI"],
+          "value": ["Correlación", "Automatización", "Detección y respuesta"]
         },
         {
-          "name": "Security Operations",
-          "products": [
-            "FortiAnalyzer",
-            "FortiSIEM",
-            "FortiEDR/XDR",
-            "FortiSOAR",
-            "FortiNDR",
-            "FortiMail",
-            "FortiSandbox",
-            "FortiToken",
-            "FortiAuthenticator",
-            "FortiGuard MDR Service",
-            "FortiRecon",
-            "FortiPAM",
-            "SOCaaS",
-            "IR Services",
-            "FortiDeceptor",
-            "FortiTrust Identity",
-            "FortiGuest",
-            "FortiCNAPP",
-            "FortiDLP",
-            "FortiTester",
-            "FortiDevSec",
-            "FortiDAST",
-            "FortiScanner Cloud",
-            "FortiAI"
-          ],
-          "value": [
-            "Gestión de logs y monitoreo centralizado (SIEM)",
-            "Automatización de operaciones de seguridad (SOAR)",
-            "Detección y respuesta en endpoint (EDR/XDR)",
-            "Análisis de red con IA para detección de amenazas (NDR)",
-            "Protección contra amenazas de correo electrónico",
-            "Sandbox con IA contra amenazas desconocidas y 0-day",
-            "Autenticación multifactor (MFA) y gestión de identidades",
-            "Detección y respuesta gestionada (MDR)",
-            "Protección de riesgo digital externo e interno",
-            "Gestión de acceso privilegiado (PAM)",
-            "Monitoreo continuo y triage de incidentes (SOCaaS)",
-            "Deception para detección temprana de ataques",
-            "Seguridad de aplicaciones desde el código hasta la nube (CNAPP)",
-            "DLP en endpoint y gestión de riesgo interno",
-            "Pruebas de rendimiento y simulación de ataques (BAS)",
-            "Asistente GenAI integrado para SOC y NOC (FortiAI)"
-          ]
+          "name": "Endpoint / XDR",
+          "products": ["FortiEDR/XDR", "FortiClient EPP Agent"],
+          "value": ["Protección de endpoint", "Respuesta automatizada", "Cobertura extendida"]
         },
         {
-          "name": "OT Security Platform",
-          "products": [
-            "FortiGate (OT Security Service)",
-            "FortiSRA",
-            "Ruggedized Products"
-          ],
-          "value": [
-            "Protección contra amenazas específicas de OT",
-            "Acceso remoto seguro sin agente para entornos OT",
-            "Equipos reforzados para entornos industriales y exteriores hostiles",
-            "Integración de redes OT al SOC y planes de respuesta a incidentes"
-          ]
+          "name": "Email / Sandbox / Deception",
+          "products": ["FortiMail", "FortiSandbox", "FortiDeceptor"],
+          "value": ["Protección de correo", "Detección de amenazas desconocidas", "Detección temprana en red"]
         },
         {
-          "name": "Open Ecosystem",
-          "products": [
-            "FNDN",
-            "Fabric Connectors",
-            "Fabric API",
-            "DevOps Tools",
-            "Extended Ecosystem"
-          ],
-          "value": [
-            "Desarrollo de soluciones personalizadas para la comunidad Fortinet",
-            "Integraciones nativas para automatización y seguridad",
-            "Integraciones de socios para visibilidad y protección end-to-end",
-            "Scripts para automatización de tareas de red y seguridad",
-            "Integración con terceros para compartir inteligencia de amenazas"
-          ]
+          "name": "Identity / PAM / Access",
+          "products": ["FortiAuthenticator", "FortiToken", "FortiTrust Identity", "FortiPAM", "FortiGuest"],
+          "value": ["IAM", "MFA", "Acceso privilegiado"]
+        },
+        {
+          "name": "AppSec / WAAP / DDoS",
+          "products": ["FortiWeb", "FortiADC", "FortiDDoS", "FortiDAST", "FortiDevSec"],
+          "value": ["Protección web y API", "Balanceo seguro", "Seguridad de aplicaciones"]
+        },
+        {
+          "name": "Data / Risk / Exposure",
+          "products": ["FortiDLP", "FortiRecon", "FortiScanner Cloud", "FortiTester"],
+          "value": ["Protección de datos", "Riesgo digital", "Gestión de superficie de ataque"]
+        },
+        {
+          "name": "OT Security",
+          "products": ["OT Security Platform", "OT Security Service", "FortiSRA", "Ruggedized Products", "SecOps for OT"],
+          "value": ["Seguridad industrial", "Acceso remoto seguro", "Integración de OT al SOC"]
+        },
+        {
+          "name": "LAN / WLAN Segura",
+          "products": ["FortiSwitch", "FortiAP", "FortiNAC"],
+          "value": ["Conectividad segura", "Control de acceso a la red", "Visibilidad de dispositivos"]
+        },
+        {
+          "name": "Gestión y operación de red",
+          "products": ["FortiManager", "FortiGate Cloud", "FortiAIOps", "FortiEdge Cloud"],
+          "value": ["Administración centralizada", "Analítica", "Automatización operativa"]
+        },
+        {
+          "name": "Conectividad WAN / 5G",
+          "products": ["FortiExtender", "FGaaS"],
+          "value": ["Extensión LTE/5G", "Resiliencia", "Consumo flexible"]
+        },
+        {
+          "name": "Comunicaciones unificadas",
+          "products": ["FortiVoice", "FortiFone"],
+          "value": ["Telefonía IP", "Colaboración", "Conectividad empresarial"]
+        },
+        {
+          "name": "Video y seguridad física",
+          "products": ["FortiCamera", "FortiRecorder"],
+          "value": ["Videovigilancia", "Análisis inteligente", "Visibilidad centralizada"]
+        }
+      ]
+    },
+    {
+      "name": "CrowdStrike",
+      "category": "security",
+      "description": "Plataforma Falcon para protección de endpoints, identidades, nube y operaciones de seguridad.",
+      "solutions": [
+        {
+          "name": "Endpoint / XDR",
+          "products": ["Falcon Insight XDR", "Falcon Prevent", "Falcon Endpoint Security"],
+          "value": ["Detección y respuesta", "Prevención de malware", "Consola unificada"]
+        },
+        {
+          "name": "Identity Security",
+          "products": ["Falcon Identity Protection"],
+          "value": ["Protección de identidades híbridas", "Detección de movimiento lateral", "Acceso basado en riesgo"]
+        },
+        {
+          "name": "Cloud Security",
+          "products": ["Falcon Cloud Security"],
+          "value": ["CNAPP", "Postura de nube", "Protección code-to-runtime"]
+        },
+        {
+          "name": "SOC / SIEM",
+          "products": ["Falcon Next-Gen SIEM", "Falcon Fusion SOAR"],
+          "value": ["Correlación", "Automatización", "Respuesta"]
+        }
+      ]
+    },
+    {
+      "name": "Claroty",
+      "category": "security",
+      "description": "Ciberseguridad para CPS/OT, visibilidad de activos, detección de amenazas y acceso remoto seguro.",
+      "solutions": [
+        {
+          "name": "OT / CPS Security Platform",
+          "products": ["Claroty xDome"],
+          "value": ["Visibilidad de activos", "Gestión de exposición", "Postura CPS"]
+        },
+        {
+          "name": "Threat Detection for OT",
+          "products": ["Claroty CTD"],
+          "value": ["Monitoreo continuo", "Detección de amenazas", "Respuesta en entornos industriales"]
+        },
+        {
+          "name": "Secure Remote Access",
+          "products": ["Claroty xDome Secure Access"],
+          "value": ["Acceso remoto seguro", "Control de terceros", "Zero Trust para OT"]
+        }
+      ]
+    },
+    {
+      "name": "Lumu",
+      "category": "security",
+      "description": "Continuous Compromise Assessment para detectar compromiso en red, identidad, endpoint y nube.",
+      "solutions": [
+        {
+          "name": "Compromise Detection",
+          "products": ["Lumu Defender", "Lumu Portal"],
+          "value": ["Detección 24/7", "Priorización de compromiso", "Visibilidad centralizada"]
+        },
+        {
+          "name": "Network Visibility",
+          "products": ["Lumu Collector", "Lumu Virtual Appliance"],
+          "value": ["Telemetría de red", "Integración de logs", "Contexto para SecOps"]
+        }
+      ]
+    },
+    {
+      "name": "senhasegura",
+      "category": "security",
+      "description": "Gestión de accesos privilegiados e identidades con foco en PAM, secretos y privilegios en nube.",
+      "solutions": [
+        {
+          "name": "PAM",
+          "products": ["PAM Core"],
+          "value": ["Control de sesiones privilegiadas", "Auditoría", "Reducción de riesgo interno"]
+        },
+        {
+          "name": "Password Management",
+          "products": ["MySafe"],
+          "value": ["Bóveda de credenciales", "Compartición segura", "Productividad del usuario"]
+        },
+        {
+          "name": "Cloud Entitlements / Least Privilege",
+          "products": ["CIEM", "Endpoint Privilege Manager"],
+          "value": ["Gobierno de privilegios", "Menor privilegio", "Visibilidad de permisos"]
+        }
+      ]
+    },
+    {
+      "name": "Netskope",
+      "category": "security",
+      "description": "Plataforma Netskope One para SSE/SASE, CASB, acceso privado y protección de datos.",
+      "solutions": [
+        {
+          "name": "SSE",
+          "products": ["Netskope One SSE"],
+          "value": ["SWG", "CASB", "ZTNA"]
+        },
+        {
+          "name": "SASE",
+          "products": ["Netskope One SASE", "Netskope One Private Access"],
+          "value": ["Acceso seguro", "Conectividad moderna", "Experiencia distribuida"]
+        },
+        {
+          "name": "CASB / SaaS Security",
+          "products": ["Netskope One CASB", "Netskope One SSPM"],
+          "value": ["Visibilidad SaaS", "Gobierno de aplicaciones", "Postura SaaS"]
+        }
+      ]
+    },
+    {
+      "name": "Blancco",
+      "category": "security",
+      "description": "Borrado certificado y diagnóstico de datos para activos TI, móviles y centros de datos.",
+      "solutions": [
+        {
+          "name": "Data Erasure",
+          "products": ["Blancco Drive Eraser", "Blancco Management Portal"],
+          "value": ["Borrado certificado", "Cumplimiento", "Trazabilidad"]
+        },
+        {
+          "name": "Mobile Erasure & Diagnostics",
+          "products": ["Blancco Mobile Diagnostics & Erasure"],
+          "value": ["Diagnóstico", "Borrado seguro", "Reacondicionamiento"]
+        }
+      ]
+    },
+    {
+      "name": "Kaspersky",
+      "category": "security",
+      "description": "Portafolio de protección endpoint, XDR/MDR y ciberseguridad industrial.",
+      "solutions": [
+        {
+          "name": "EDR / XDR",
+          "products": ["Kaspersky Next EDR Optimum", "Kaspersky Next EDR Expert", "Kaspersky Next XDR Expert"],
+          "value": ["Detección", "Investigación", "Respuesta"]
+        },
+        {
+          "name": "MDR",
+          "products": ["Kaspersky MDR"],
+          "value": ["Monitoreo 24/7", "Threat hunting", "Respuesta experta"]
+        },
+        {
+          "name": "OT Security",
+          "products": ["Kaspersky Industrial CyberSecurity"],
+          "value": ["Protección industrial", "XDR para OT", "Continuidad operativa"]
+        }
+      ]
+    },
+    {
+      "name": "Akamai",
+      "category": "security",
+      "description": "Protección de aplicaciones, APIs, DDoS, segmentación y seguridad en el edge.",
+      "solutions": [
+        {
+          "name": "WAAP",
+          "products": ["App & API Protector", "API Security", "Bot Manager"],
+          "value": ["WAF", "Protección API", "Defensa contra bots"]
+        },
+        {
+          "name": "DDoS Protection",
+          "products": ["Prolexic", "App & API Protector"],
+          "value": ["Mitigación DDoS", "Continuidad", "Protección global"]
+        },
+        {
+          "name": "Microsegmentation",
+          "products": ["Guardicore Segmentation"],
+          "value": ["Segmentación", "Contención lateral", "Zero Trust"]
+        }
+      ]
+    },
+    {
+      "name": "Vicarius",
+      "category": "security",
+      "description": "Remediación avanzada de vulnerabilidades con automatización, scripting y patchless protection.",
+      "solutions": [
+        {
+          "name": "Vulnerability Remediation",
+          "products": ["vRx"],
+          "value": ["Patching automatizado", "Scripting", "Virtual patching"]
+        }
+      ]
+    },
+    {
+      "name": "Axur",
+      "category": "security",
+      "description": "Protección de riesgo digital con EASM, CTI, takedown y monitoreo de fugas.",
+      "solutions": [
+        {
+          "name": "External Attack Surface Management",
+          "products": ["Axur EASM"],
+          "value": ["Mapa de superficie externa", "Detección de exposición", "Priorización"]
+        },
+        {
+          "name": "Digital Risk Protection",
+          "products": ["Axur Takedown", "Axur Data Leakage", "Axur Deep & Dark Web"],
+          "value": ["Reducción de fraude", "Protección de marca", "Respuesta a exposición"]
+        },
+        {
+          "name": "Threat Intelligence",
+          "products": ["Axur CTI"],
+          "value": ["Contexto de amenazas", "Alertas accionables", "Monitoreo externo"]
+        }
+      ]
+    },
+    {
+      "name": "Tenable",
+      "category": "security",
+      "description": "Exposure management y gestión de vulnerabilidades en TI, nube, OT e identidades.",
+      "solutions": [
+        {
+          "name": "Exposure Management",
+          "products": ["Tenable One"],
+          "value": ["Visibilidad unificada", "Priorización", "Reducción de riesgo"]
+        },
+        {
+          "name": "Vulnerability Management",
+          "products": ["Tenable Vulnerability Management", "Tenable Security Center", "Nessus"],
+          "value": ["Descubrimiento", "Evaluación", "Remediación"]
+        },
+        {
+          "name": "Attack Surface / Cloud / OT",
+          "products": ["Tenable Attack Surface Management", "Tenable Cloud Security", "Tenable OT Security"],
+          "value": ["Superficie externa", "CNAPP", "Seguridad industrial"]
+        }
+      ]
+    },
+    {
+      "name": "SealPath",
+      "category": "security",
+      "description": "Seguridad centrada en el dato, cifrado persistente y control de uso de archivos.",
+      "solutions": [
+        {
+          "name": "Data-Centric Security / DRM",
+          "products": ["SealPath Data Security"],
+          "value": ["Cifrado persistente", "Control de acceso", "Trazabilidad"]
+        },
+        {
+          "name": "Microsoft 365 Protection",
+          "products": ["SealPath for Microsoft 365"],
+          "value": ["Protección en SharePoint", "Protección en OneDrive", "Protección en Office"]
+        },
+        {
+          "name": "Compliance & Sensitive Data Protection",
+          "products": ["SealPath Data Security"],
+          "value": ["Cumplimiento", "Protección de información sensible", "Gobierno del dato"]
+        }
+      ]
+    },
+    {
+      "name": "Reveald",
+      "category": "security",
+      "description": "Plataforma Epiphany para VDR, MDR y Continuous Threat Exposure Management.",
+      "solutions": [
+        {
+          "name": "CTEM / Exposure Management",
+          "products": ["Epiphany Intelligence Platform"],
+          "value": ["Priorización de exposición", "Enfoque proactivo", "Reducción de riesgo"]
+        },
+        {
+          "name": "VDR / MDR",
+          "products": ["Epiphany Intelligence Platform", "Fusion Center Services"],
+          "value": ["Detección y respuesta", "Acompañamiento experto", "Operación continua"]
+        }
+      ]
+    },
+    {
+      "name": "Stellar Cyber",
+      "category": "security",
+      "description": "Plataforma SecOps con Open XDR, AI SIEM, NDR, ITDR y UEBA.",
+      "solutions": [
+        {
+          "name": "Open XDR / SecOps",
+          "products": ["Stellar Cyber Open XDR Platform"],
+          "value": ["Unificación", "Integraciones abiertas", "Respuesta coordinada"]
+        },
+        {
+          "name": "AI SIEM / NDR",
+          "products": ["AI SIEM", "NDR/OT"],
+          "value": ["Correlación", "Detección de red", "Cobertura híbrida"]
+        },
+        {
+          "name": "Identity & Behavior Analytics",
+          "products": ["ITDR", "UEBA"],
+          "value": ["Riesgo de identidad", "Anomalías", "Contexto de usuario"]
         }
       ]
     },
     {
       "name": "Kriptos",
-      "description": "Clasificación de datos, DLP y protección de información no estructurada con IA.",
+      "category": "security",
+      "description": "Gobierno y seguridad de datos no estructurados con clasificación y etiquetado asistidos por IA.",
       "solutions": [
         {
-          "name": "Clasificación de Datos",
-          "products": [
-            "Kriptos AI Classifier",
-            "Kriptos Dashboard"
-          ],
-          "value": [
-            "Visibilidad de datos",
-            "Etiquetado automático",
-            "Reducción de riesgo oculto"
-          ]
+          "name": "Unstructured Data Security",
+          "products": ["Kriptos Platform"],
+          "value": ["Clasificación automática", "Etiquetado", "Visibilidad de datos sensibles"]
         },
         {
-          "name": "DLP",
-          "products": [
-            "Kriptos DLP Engine",
-            "Kriptos Policy Manager"
-          ],
-          "value": [
-            "Prevención de fuga",
-            "Cumplimiento normativo",
-            "Control de datos críticos"
-          ]
+          "name": "AI Governance / Compliance",
+          "products": ["Kriptos Platform"],
+          "value": ["Gobierno del dato", "Cumplimiento", "Priorización de riesgo"]
         }
       ]
     },
     {
-      "name": "Crowdstrike",
-      "description": "Seguridad clientes y endpoint, EDR, IADR, ITDR",
+      "name": "Darktrace",
+      "category": "security",
+      "description": "Plataforma de ciberseguridad con IA para red, correo, nube, endpoint y protección de IA.",
       "solutions": [
         {
-          "name": "IADR",
-          "products": [
-            "Falcon IADR"
-          ],
-          "value": [
-            "Proteccion de uso de IA Generativa",
-            "Shadow IA",
-            "Prompt protection",
-            "Guardrails"
-          ]
+          "name": "Network Detection & Response",
+          "products": ["Darktrace / NETWORK"],
+          "value": ["Detección autónoma", "Análisis de comportamiento", "Respuesta en tiempo real"]
+        },
+        {
+          "name": "Email Security",
+          "products": ["Darktrace / EMAIL"],
+          "value": ["Protección de correo", "Detección de phishing", "Cobertura de amenazas novedosas"]
+        },
+        {
+          "name": "Endpoint / Cloud / AI",
+          "products": ["Darktrace / ENDPOINT", "Darktrace / CLOUD", "Darktrace / SECURE AI"],
+          "value": ["Cobertura extendida", "Visibilidad híbrida", "Protección de iniciativas de IA"]
         }
       ]
     },
     {
-      "name": "A10",
-      "description": "Soluciones de seguridad DDoS balanceo y  a aseguramiento de aplicaciones WAAP, WAF, ADC, SLB, GSL; DDoS",
+      "name": "NovaSec",
+      "category": "security",
+      "description": "Software GRC para centralizar riesgo, cumplimiento, auditoría y continuidad.",
       "solutions": [
         {
-          "name": "ADC",
-          "products": [
-            "Thunder"
-          ],
-          "value": [
-            "Balanceo y aceleracion de aplicaciones"
-          ]
+          "name": "GRC",
+          "products": ["NovaSec GRC"],
+          "value": ["Riesgo", "Cumplimiento", "Auditoría"]
         },
         {
-          "name": "WAAP",
-          "products": [
-            "Thunder WAAP - Fastly"
-          ],
-          "value": [
-            "Aseguramiento de servicios Web",
-            "Aseguramiento de API",
-            "Proteccion de ataques de BOT"
-          ]
+          "name": "Continuidad y Gestión Integrada",
+          "products": ["NovaSec GRC"],
+          "value": ["Continuidad", "Planes de acción", "Visibilidad ejecutiva"]
+        }
+      ]
+    },
+    {
+      "name": "IBM",
+      "category": "security",
+      "description": "Seguridad de datos y seguridad/gobierno para IA con la familia Guardium y watsonx.",
+      "solutions": [
+        {
+          "name": "Seguridad de Bases de Datos / Data Security",
+          "products": ["Guardium Data Security Center", "Guardium Data Protection", "Guardium Vulnerability Assessment", "Guardium Discovery and Classify"],
+          "value": ["Descubrimiento", "Protección de datos", "Cumplimiento"]
         },
         {
-          "name": "Anti DDoS",
-          "products": [
-            "Thunder CFW"
-          ],
-          "value": [
-            "Aseguramiento de DNS",
-            "Aseguramiento de Canales"
-          ]
+          "name": "Seguridad para IA",
+          "products": ["Guardium AI Security", "watsonx.governance"],
+          "value": ["Gobierno de IA", "Gestión de riesgo", "Cumplimiento y monitoreo"]
+        }
+      ]
+    },
+    {
+      "name": "Hitachi Vantara",
+      "category": "infrastructure",
+      "description": "Infraestructura de datos empresarial, almacenamiento y consumo como servicio.",
+      "solutions": [
+        {
+          "name": "Enterprise Storage",
+          "products": ["VSP One Block"],
+          "value": ["Rendimiento", "Escalabilidad", "Resiliencia"]
+        },
+        {
+          "name": "Storage Management",
+          "products": ["Hitachi Ops Center"],
+          "value": ["Operación simplificada", "Automatización", "Visibilidad"]
+        },
+        {
+          "name": "Infrastructure as a Service",
+          "products": ["EverFlex"],
+          "value": ["Consumo flexible", "Agilidad", "Gobierno"]
+        }
+      ]
+    },
+    {
+      "name": "Veeam",
+      "category": "infrastructure",
+      "description": "Resiliencia de datos, backup, recuperación y protección para entornos híbridos y multicloud.",
+      "solutions": [
+        {
+          "name": "Backup & Recovery",
+          "products": ["Veeam Backup & Replication", "Veeam Data Platform"],
+          "value": ["Respaldo", "Recuperación", "Portabilidad"]
+        },
+        {
+          "name": "Cloud Data Protection",
+          "products": ["Veeam Data Cloud", "Veeam Vault"],
+          "value": ["Protección SaaS", "Almacenamiento inmutable", "Recuperación segura"]
+        }
+      ]
+    },
+    {
+      "name": "Extreme Networks",
+      "category": "infrastructure",
+      "description": "Redes empresariales con switching, wireless, fabric y gestión cloud.",
+      "solutions": [
+        {
+          "name": "Cloud Network Management",
+          "products": ["ExtremeCloud IQ"],
+          "value": ["Gestión unificada", "Analítica", "Operación simplificada"]
+        },
+        {
+          "name": "Network Fabric",
+          "products": ["Fabric Connect"],
+          "value": ["Automatización", "Segmentación", "Escalabilidad"]
+        },
+        {
+          "name": "Wired Access",
+          "products": ["Universal Switches", "5320 Series", "7720 Series"],
+          "value": ["Conectividad empresarial", "Flexibilidad", "Despliegue campus/branch"]
+        }
+      ]
+    },
+    {
+      "name": "Nutanix",
+      "category": "infrastructure",
+      "description": "Plataforma de nube híbrida e HCI para infraestructura, virtualización y operación multicloud.",
+      "solutions": [
+        {
+          "name": "Hybrid Cloud Infrastructure",
+          "products": ["Nutanix Cloud Platform", "Nutanix Cloud Infrastructure (NCI)"],
+          "value": ["HCI", "Operación simplificada", "Alta disponibilidad"]
+        },
+        {
+          "name": "Virtualization",
+          "products": ["AHV"],
+          "value": ["Virtualización integrada", "Seguridad", "Eficiencia"]
+        },
+        {
+          "name": "Public Cloud Extension",
+          "products": ["Nutanix Cloud Clusters (NC2)"],
+          "value": ["Movilidad", "Elasticidad", "Modelo híbrido"]
+        }
+      ]
+    },
+    {
+      "name": "A10 Networks",
+      "category": "infrastructure",
+      "description": "Entrega de aplicaciones, balanceo, protección DDoS y networking de alto desempeño.",
+      "solutions": [
+        {
+          "name": "ADC / Load Balancing",
+          "products": ["Thunder ADC"],
+          "value": ["Disponibilidad", "Balanceo", "Optimización"]
+        },
+        {
+          "name": "DDoS & Application Protection",
+          "products": ["A10 Defend", "Thunder ADC"],
+          "value": ["Mitigación", "Continuidad", "Protección de servicios"]
+        },
+        {
+          "name": "CGNAT / IPv6 Migration",
+          "products": ["CGNAT & IPv6"],
+          "value": ["Escalabilidad", "Transición IPv6", "Operación carrier-grade"]
         }
       ]
     },
     {
       "name": "Dynatrace",
-      "description": "Servicios de observabilidad de aplicaciones de negocio",
-      "solutions": []
-    },
-    {
-      "name": "Netskope",
-      "description": "Provedor de soluciones SASE para asegurar la carga de trabajo remoto de usuarios corporativos",
+      "category": "observability",
+      "description": "Observabilidad, AIOps, seguridad y analítica sobre una plataforma unificada.",
       "solutions": [
         {
-          "name": "SSE",
-          "products": [],
-          "value": []
+          "name": "Full-Stack Observability",
+          "products": ["Dynatrace Platform"],
+          "value": ["APM", "Infraestructura", "Experiencia digital"]
         },
         {
-          "name": "ZTNA",
-          "products": [],
-          "value": []
+          "name": "AI & Automation",
+          "products": ["Davis AI", "Dynatrace Intelligence"],
+          "value": ["Causal AI", "Automatización", "Análisis confiable"]
         },
         {
-          "name": "DLP",
-          "products": [],
-          "value": []
+          "name": "Unified Data Platform",
+          "products": ["Grail"],
+          "value": ["Lakehouse unificado", "Observabilidad + seguridad", "Escala"]
+        }
+      ]
+    },
+    {
+      "name": "Gamma Ingenieros (MSSP)",
+      "category": "security",
+      "description": "Servicios gestionados de ciberseguridad con capacidades MSSP y operación desde el CSOC/CERT de Gamma.",
+      "solutions": [
+        {
+          "name": "Seguridad gestionada MSSP",
+          "products": ["Implementación", "Migración", "Diagnóstico y afinamiento", "Soporte", "Monitoreo de salubridad y disponibilidad"],
+          "value": ["Operación continua", "Administración especializada", "Optimización y soporte"]
         },
         {
-          "name": "FW",
-          "products": [],
-          "value": []
+          "name": "Capacitación y acompañamiento",
+          "products": ["Boletines periódicos de ciberseguridad", "Gamma CyberAcademy", "Centro de entrenamiento especializado"],
+          "value": ["Concientización", "Transferencia de conocimiento", "Mejora de cultura de seguridad"]
         },
         {
-          "name": "CASB",
-          "products": [],
-          "value": []
+          "name": "Identificación (CSOC)",
+          "products": ["CTEM", "Ethical Hacking", "Pentesting", "Gestión de vulnerabilidades", "Gamma RedTeam", "Protección de riesgos digitales"],
+          "value": ["Diagnóstico de riesgo actual", "Detección de exposición", "Evaluación proactiva"]
+        },
+        {
+          "name": "Detección (CSOC)",
+          "products": ["Servicio ADR", "UEBA", "Correlación SIEM", "Threat Hunting con IA", "Deception service"],
+          "value": ["Monitoreo continuo", "Detección avanzada", "Contexto y priorización"]
+        },
+        {
+          "name": "Respuesta y Recuperación (CSOC)",
+          "products": ["Gestión de incidentes", "SOAR", "Sala de crisis", "Apoyo forense"],
+          "value": ["Contención", "Orquestación", "Recuperación operativa"]
+        },
+        {
+          "name": "Consultoría y Gobierno",
+          "products": ["SGSI/MSPI", "ISO27000", "NIST", "PCI", "ISO31000", "BCP/DRP", "GRC", "Clasificación de datos"],
+          "value": ["Gobierno", "Cumplimiento", "Continuidad de negocio"]
         }
       ]
     }

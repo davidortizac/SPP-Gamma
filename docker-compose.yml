@@ -1,14 +1,53 @@
 version: '3.9'
+
 services:
-  gamma-portfolio-explorer:
+  db:
+    image: postgres:16-alpine
+    container_name: gamma-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-gamma}
+      POSTGRES_USER: ${DB_USER:-gamma}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-gamma_secret}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-gamma}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
     build: .
     container_name: gamma-portfolio-explorer
     ports:
       - "3080:3000"
     environment:
       PORT: 3000
-      GEMINI_MODEL: gemini-2.5-flash
+      NODE_ENV: production
+      # Gemini
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-    volumes:
-      - ./catalog.json:/app/catalog.json
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-change_this_in_production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      # PostgreSQL
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-gamma}
+      DB_USER: ${DB_USER:-gamma}
+      DB_PASSWORD: ${DB_PASSWORD:-gamma_secret}
+      # Admin inicial (deshabilitar en produccion poniendo ADMIN_ENABLED=false)
+      ADMIN_ENABLED: ${ADMIN_ENABLED:-true}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@gamma.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin1234!}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrador}
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  pgdata:
